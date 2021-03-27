@@ -38,27 +38,6 @@ grid_x <- seq(from = -3, to = 3, length.out = NN)
 grid_y <- seq(from = -3, to = 3, length.out = NN)
 X <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
-nn <- nrow(X)
-## calculating bending energy matrix B;
-# See the texts by Bookstein (1991) or Dryden and Mardia (1998)
-
-h <- as.matrix(dist(X, diag=TRUE,upper=TRUE))
-K <- h^2 * log(h)
-diag(K) <- 0
-one <- rep(1, nn)
-Gamma <- cbind(K,one,X)
-Gamma <- rbind(Gamma,c(one,0,0,0))
-Gamma <- rbind(Gamma,cbind(t(X),matrix(0,2,3)))
-Ginv <- solve(Gamma)
-Ginv <- (Ginv + t(Ginv))/2  # make exactly symmetric prior to eigen
-
-B <- Ginv[1:nn, 1:nn]
-Beig <- eigen(B)
-g <- Beig$vectors
-l <- Beig$values
-g <- g[,order(l)]
-l <- l[order(l)]
-
 NEGLOGLIK <- function(p){
 
 	w <- p[length(jWarp) + 1:2]
@@ -76,20 +55,21 @@ NEGLOGLIK <- function(p){
 	sigma <- htarg^2 * log(htarg)
 	sigma[htarg == 0] <- 0
 
-	beta1 <- p[1:length(jWarp)]
-  
-	parWarpsSum <- rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T))
+	beta1 <- matrix(p[1:length(jWarp)], ncol = ncol(sigma), nrow = length(jWarp))
 
-	nonparametric_cov_est <- c(parWarpsSum %*% sigma)
+	sub_sigma <- beta1 * sigma[1:length(jWarp), ]
+	
+	nonparametric_cov_est <- t(sub_sigma) %*% sub_sigma
 
-	err <- sum((nonstat_est1 - nonstat_est1_targ)^2 + (nonstat_est2 - nonstat_est2_targ)^2 + (nonstat_est3 - nonstat_est3_targ)^2)
+	err <- sum((emp_cov - nonparametric_cov_est)^2)
 
 	return(err)
 }
 
-jWarp = 1:50
-init2 <- rep(0, 3 * length(jWarp))
-fit2 <- optim(par = init2, fn = NEGLOGLIK2_SCRATCH, control = list(trace = 5, maxit = 1000))
+jWarp = 1:10
+init <- seq(-0.01, 0.01, length.out = length(jWarp) + 2)
+fit2 <- optim(par = init, fn = NEGLOGLIK, control = list(trace = 5, maxit = 1000))
+
 for(tt in 1:1000){
 	fit2 <- optim(par = fit2$par, fn = NEGLOGLIK2_SCRATCH, control = list(trace = 5, maxit = 500)) 
 	plot_spatially_varying_scratch(fit2$par)

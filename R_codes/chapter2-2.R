@@ -18,7 +18,7 @@ sim_grid_locations <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
 reference_locations <- c(1, ceiling(n / 2) + ceiling(N / 2))
 
-ind <- 6 #3, 4, 6, 8, 9
+ind <- 6 #3, 4, 6, 8, 9, 14, 16
 set.seed(ind)
 PARAMETER_NONSTAT <- runif(15, -3, 3)
 
