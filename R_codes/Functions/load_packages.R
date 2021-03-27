@@ -1,0 +1,37 @@
+#install.packages("RcppZiggurat")
+#install.packages("fields")
+
+library(MASS)
+library(mapdata)
+library(maptools)
+library(dplyr)
+library(sp)
+library(gstat)
+library(devtools)
+#library(INLA)
+library(tidyr)
+library(Matrix)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+#library(mapproj)
+library(RandomFields)
+#library(verification)
+library(foreach)
+library(doParallel)
+library(geoR)
+library(mvnfast)
+library(parallelDist)
+library(Rcpp)				#sourceCpp function
+#library(ncdf4)
+library(pracma)				#mod function
+library(plyr)				#adply function
+library(doParallel)
+library(optimParallel)
+#library(Rmpi)
+#library(snow)
+#library(psych)
+library(Rfast)
+library(fields)
+
+
