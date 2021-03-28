@@ -12,7 +12,7 @@ sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cp
 
 N <- 10
 n <- N^2
-TT <- 10
+TT <- 5
 grid_x <- seq(from = 0, to = 1, length.out = N)
 grid_y <- seq(from = 0, to = 1, length.out = N)
 sim_grid_locations <- expand.grid(grid_x, grid_y) %>% as.matrix()
@@ -29,7 +29,7 @@ cat('Computing covariances...', '\n')
 cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT)
 
 set.seed(1)
-r1 <- rmvn(100, rep(0, ncol(cov1)), cov1, ncores = 25)
+r1 <- rmvn(500, rep(0, ncol(cov1)), cov1, ncores = 25)
 
 emp_cov <- cov(r1)
 
@@ -39,8 +39,11 @@ grid_y <- seq(from = -3, to = 3, length.out = NN)
 X <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
 NEGLOGLIK <- function(p){
+	
+	w <- p[1:2]
 
-	w <- p[length(jWarp) + 1:2]
+	cat(w, '\n')
+
 	Xtarg <- Xtarg_orig <- sim_grid_locations 
 
 	if (TT > 1){
@@ -55,11 +58,11 @@ NEGLOGLIK <- function(p){
 	sigma <- htarg^2 * log(htarg)
 	sigma[htarg == 0] <- 0
 
-	beta1 <- matrix(p[1:length(jWarp)], ncol = ncol(sigma), nrow = length(jWarp))
+	beta1 <- matrix(p[2 + 1:length(jWarp)], ncol = ncol(sigma), nrow = length(jWarp))
 
 	sub_sigma <- beta1 * sigma[1:length(jWarp), ]
 	
-	nonparametric_cov_est <- t(sub_sigma) %*% sub_sigma
+	nonparametric_cov_est <- t(sub_sigma) %*% sub_sigma + diag(diag(emp_cov), ncol(sigma), ncol(sigma))
 
 	err <- sum((emp_cov - nonparametric_cov_est)^2)
 
@@ -67,10 +70,10 @@ NEGLOGLIK <- function(p){
 }
 
 jWarp = 1:10
-init <- seq(-0.01, 0.01, length.out = length(jWarp) + 2)
-fit2 <- optim(par = init, fn = NEGLOGLIK, control = list(trace = 5, maxit = 1000))
+init <- c(0.1, 0.1, rep(0, length(jWarp)))
+fit <- optim(par = init, fn = NEGLOGLIK, control = list(trace = 5, maxit = 10000))
 
-for(tt in 1:1000){
-	fit2 <- optim(par = fit2$par, fn = NEGLOGLIK2_SCRATCH, control = list(trace = 5, maxit = 500)) 
-	plot_spatially_varying_scratch(fit2$par)
-}
+jWarp = 1:15
+init <- c(fit$par, rep(0, length(jWarp) - length(fit$par) + 2))
+fit <- optim(par = init, fn = NEGLOGLIK, control = list(trace = 5, maxit = 1000))
+

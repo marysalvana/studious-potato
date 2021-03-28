@@ -23,7 +23,7 @@ library(geoR)
 library(mvnfast)
 library(parallelDist)
 library(Rcpp)				#sourceCpp function
-#library(ncdf4)
+library(ncdf4)
 library(pracma)				#mod function
 library(plyr)				#adply function
 library(doParallel)
