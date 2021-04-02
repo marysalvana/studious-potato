@@ -142,7 +142,7 @@ NumericMatrix DEFORMATION(NumericMatrix & Loc, NumericVector & param, NumericMat
 		double deform_loc2_x = param_nonstat(3) + (new_loc2_x - param_nonstat(3)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
 		double deform_loc2_y = param_nonstat(4) + (new_loc2_y - param_nonstat(4)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
 
-		double dist = sqrt(pow(deform_loc1_x - deform_loc2_x, 2) + pow(deform_loc1_y - deform_loc2_y, 2));
+		double dist = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
 
 	      if (dist == 0) {
 		temp_val = temp_val + sigma2;

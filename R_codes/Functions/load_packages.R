@@ -33,5 +33,6 @@ library(optimParallel)
 #library(psych)
 library(Rfast)
 library(fields)
+library(fda)
 
 

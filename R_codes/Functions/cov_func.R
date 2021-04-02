@@ -1,5 +1,17 @@
-MATERN_UNI_SPATIALLY_VARYING_PARAMETERS <- function(PARAMETER, PARAMETER_NONSTAT, LOCATION, TIME, NONFROZEN = T) {
+MATERN_UNI_STATIONARY <- function(PARAMETER, LOCATION){
 
+        nu <- PARAMETER[3]
+        beta <- PARAMETER[2]
+        sigma2 <- PARAMETER[1]
+
+	dist0 <- dist(x = LOCATION, diag = TRUE, upper = TRUE) %>% as.matrix()
+
+	S <- ifelse(dist0 != 0, (dist0 / beta)^nu * besselK(dist0 / beta, nu) / (2^(nu - 1) * gamma(nu)), sigma2)
+
+  	return(S)
+}
+
+MATERN_UNI_SPATIALLY_VARYING_PARAMETERS <- function(PARAMETER, PARAMETER_NONSTAT, LOCATION, TIME, N_SIM = NULL) {
 
 	n <- nrow(LOCATION)
 
@@ -9,9 +21,9 @@ MATERN_UNI_SPATIALLY_VARYING_PARAMETERS <- function(PARAMETER, PARAMETER_NONSTAT
                 LOCATION_NEW <- rbind(LOCATION_NEW, cbind(LOCATION, rep(tt, n)))
         }
 
-	if(NONFROZEN){
+	if(!is.null(N_SIM)){
 		set.seed(1234)
-		WIND_SIMULATED <- matrix(mvrnorm(1, mu = PARAMETER[4:5], Sigma = matrix(PARAMETER[6:9], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = PARAMETER[4:5], Sigma = matrix(PARAMETER[6:9], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
 	}else{
 		WIND_SIMULATED <- matrix(PARAMETER[4:5], ncol = 2, byrow = T)	
 	}
@@ -21,8 +33,7 @@ MATERN_UNI_SPATIALLY_VARYING_PARAMETERS <- function(PARAMETER, PARAMETER_NONSTAT
         return(SIGMA) 
 }
 
-MATERN_UNI_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, LOCATION, TIME, NONFROZEN = T) {
-
+MATERN_UNI_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, LOCATION, TIME, N_SIM = NULL) {
 
 	n <- nrow(LOCATION)
 
@@ -32,9 +43,9 @@ MATERN_UNI_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, LOCATION, T
                 LOCATION_NEW <- rbind(LOCATION_NEW, cbind(LOCATION, rep(tt, n)))
         }
 
-	if(NONFROZEN){
+	if(!is.null(N_SIM)){
 		set.seed(1234)
-		WIND_SIMULATED <- matrix(mvrnorm(1, mu = PARAMETER[4:5], Sigma = matrix(PARAMETER[6:9], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = PARAMETER[4:5], Sigma = matrix(PARAMETER[6:9], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
 	}else{
 		WIND_SIMULATED <- matrix(PARAMETER[4:5], ncol = 2, byrow = T)	
 	}
