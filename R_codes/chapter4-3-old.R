@@ -113,7 +113,7 @@ pdf(file = paste(root, 'Figures/4-taylors-hypothesis-example.pdf', sep = ''), wi
 split.screen( rbind(c(0.08,0.98,0.1,0.95), c(0.98,0.99,0.1,0.95)))
 split.screen( figs = c( 2, 4 ), screen = 1 )
 
-hr_label <- c('(i)', '(ii)', '(iii)', '(iv)')
+hr_label <- c('i', 'ii', 'iii', 'iv')
 mod_label <- c('A', 'B')
 
 for(model in 1:2){
@@ -137,7 +137,7 @@ for(model in 1:2){
 			mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 		}else{
 			mtext(expression(t^'*'), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
-			axis(1, at = seq(1, 4, by = 1), cex.axis = 2)
+			axis(1, at = seq(1, 4, by = 1), cex.axis = 2, mgp = c(1, 1.5, 0))
 		}
 	}
 }				
