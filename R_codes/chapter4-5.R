@@ -86,7 +86,8 @@ close.screen( all=TRUE)
 dev.off()
 
 
-pdf(file = paste(root, 'Figures/4_application.pdf', sep = ''), width = 27, height = 7)
+jpeg(file = paste(root, 'Figures/4_application.jpg', sep = ''), width = 1800, height = 500)
+#pdf(file = paste(root, 'Figures/4_application.pdf', sep = ''), width = 27, height = 7)
 
 split.screen( rbind(c(0.05,0.95,0.12,0.92), c(0.95,0.99,0.12,0.92)))
 split.screen( figs = c( 2, 5 ), screen = 1 )
@@ -120,7 +121,7 @@ for(hr in hr_ind){
 
 screen(2)
 
-x1 <- c(0.025,0.12,0.12,0.025) + 0.1
+x1 <- c(0.025,0.1,0.1,0.025) + 0.1
 y1 <- c(0.3,0.3,0.7,0.7)
 legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(zlim_range[1], zlim_range[2], length.out = 3), 1), CEX = 2)
 
