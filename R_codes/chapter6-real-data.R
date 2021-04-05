@@ -198,31 +198,83 @@ close.screen( all=TRUE)
 dev.off()
 
 
-###########################  NEW TESTING FOR FULL MAP ###########################  413, 1, 700
+# FOR FULL MAPPING OF TRAINING AND PREDICTION, CHOOSE ALL THE REMAINING POINTS AT TIME time_index_for_plotting IN TESTING DATASET 
 
-T_sub <- 413
+set <- 1
 
-ind_sub_train <- which(locs_t_TRAIN == T_sub)
+ind_sub_train <- which(locs_t_TRAIN == time_index_for_plotting) 	#find the index of spatial measurements in the training dataset at time time_index_for_plotting
 
-locs_s_sub_train <- locs_s_TRAIN[ind_sub_train, ]
+locs_s_sub_train <- locs_s_TRAIN[ind_sub_train, ]			#extract the spatial locations at the training dataset at time time_index_for_plotting
+
+# RETRIEVE THE INDEX OF THE SPATIAL LOCATIONS AT THE TRAINING DATASET AT TIME time_index_for_plotting IN THE ORIGINAL 550 x 2 LOCATIONS MATRIX
 
 new_test_ind <- NULL
 
 for(qq in 1:nrow(locs_s_sub_train)){
-	new_test_ind <- c(new_test_ind, which(locs[, 1] == locs_s_sub_train[qq, 1] & locs[, 2] == locs_s_sub_train[qq, 2]))
+        new_test_ind <- c(new_test_ind, which(locs[, 1] == locs_s_sub_train[qq, 1] & locs[, 2] == locs_s_sub_train[qq, 2]))
 }
 
-Z_vec <- Z[T_sub, -new_test_ind]
+# EXTRACT ONLY THE SPATIAL MEASUREMENTS AT TIME time_index_for_plotting AT LOCATIONS NOT INCLUDED IN THE SUBSET OF LOCATIONS ALREADY IN THE TRAINING SET
 
-locs_s_sub <- locs[-new_test_ind, ]
-Z_sub <- Z_vec
-locs_t_sub <- rep(T_sub, nrow(locs_s_sub))
+obs_sub_test <- res_mat1[time_index_for_plotting, -new_test_ind]
+locs_s_sub_test <- locs[-new_test_ind, ]
+locs_t_sub_test <- rep(time_index_for_plotting, nrow(locs_s_sub))
+
+#write.table(locs_s_sub_test, file = paste(root, "Data/locations_space_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+#write.table(locs_t_sub_test, file = paste(root, "Data/locations_time_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+#write.table(obs_sub_test - mean(obs_sub_test), file = paste(root, "Data/data_st_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
 
 
-Z_train <- Z[T_sub, new_test_ind]
-locs_s_obs <- locs[new_test_ind, ]
+# LOAD PREDICTIONS TXT FILE IMPORTED FROM EXAGEOSTAT
 
-#write.table(locs_s_sub, file = "/home/salvanmo/Desktop/ipdps/Data/locations_space_testing_4", sep = ",",row.names = FALSE, col.names = FALSE)
-#write.table(locs_t_sub, file = "/home/salvanmo/Desktop/ipdps/Data/locations_time_testing_4", sep = ",",row.names = FALSE, col.names = FALSE)
-#write.table(Z_sub, file = "/home/salvanmo/Desktop/ipdps/Data/data_st_testing_4", sep = ",", row.names = FALSE, col.names = FALSE)
+obs_sub_pred <- read.table(paste('/home/salvanmo/Desktop/ipdps/Predictions/predicted_values_September_09_2020_16:01:44', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
+zlim_range <- range(c(obs_sub_pred, obs_sub_pred, obs_sub_train))
+
+jpeg(file = paste(root, 'Figures/6-application_data_predictions.jpg', sep = ''), width = 1800, height = 700)
+
+split.screen( rbind(c(0.08,0.95,0.1,0.95), c(0.95,0.99,0.1,0.95)))
+split.screen( figs = c( 1, 3 ), screen = 1 )
+
+screen(3)
+par(pty = 's')
+
+quilt.plot(locs_s_sub_train[, 1], locs_s_sub_train[, 2], obs_sub_train, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, nx = 25, ny = 25, zlim = zlim_range)
+map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+
+mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+
+mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+
+mtext('Training', side = 3, line = 1, adj = 0.5, cex = 2.5, font = 2)
+
+screen(4)
+par(pty = 's')
+
+quilt.plot(c(locs_s_sub_train[, 1], locs_s_sub_test[, 1]), c(locs_s_sub_train[, 2], locs_s_sub_test[, 2]), c(obs_sub_train, obs_sub_pred), ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, nx = 25, ny = 25, zlim = zlim_range)
+map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+
+mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+
+mtext('Training & Predictions', side = 3, line = 1, adj = 0.5, cex = 2.5, font = 2)
+
+screen(5)
+par(pty = 's')
+
+err <- (obs_sub_pred - obs_sub_test)^2
+
+quilt.plot(locs_s_sub_test[, 1], locs_s_sub_test[, 2], err, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, nx = 25, ny = 25)
+map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+
+mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+
+mtext('(Testing - Prediction)^2', side = 3, line = 1, adj = 0.5, cex = 2.5, font = 2)
+
+screen(2)
+
+x1 <- c(0.025,0.12,0.12,0.025) + 0.1
+y1 <- c(0.3,0.3,0.7,0.7)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(min(err), max(err), length.out = 5), 1), CEX = 2)
+
+close.screen( all=TRUE)
+dev.off()
