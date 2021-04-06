@@ -84,11 +84,14 @@ dev.off()
 
 pdf(file = paste(root, 'Figures/6-MSPE.pdf', sep = ''), width = 10, height = 10)
 
-boxplot(DAT_MSPE, xlab = expression(beta), ylab = "MSPE", xaxt = 'n', col = rep(c("#28908C", "#F28F20"), 3))
+par(mai=c(1,1.2,1,1))
 
-legend(0.5, 0.0258, legend = c("Separable", "Nonseparable"), pt.cex = c(2, 2), box.lty = 0, inset = .02, col = c("#28908C", "#F28F20"), pch = 15)
-axis(1, at = c(1.5, 3.5, 5.5), labels = c('0.1', '0.5', '1'))
+boxplot(DAT_MSPE, xlab = "", ylab = "", xaxt = 'n', col = rep(c("#28908C", "#F28F20"), 3), yaxt = 'n')
+axis(2, cex.axis = 2)
+mtext('MSPE', side = 2, line = 3, adj = 0.5, cex = 2.5, col = 4, font = 2)
 
+legend(0.5, 0.0258, legend = c("Separable", "Nonseparable"), pt.cex = c(3, 3), box.lty = 0, inset = .02, col = c("#28908C", "#F28F20"), pch = 15, cex = 2)
+axis(1, at = c(1.5, 3.5, 5.5), labels = c(expression(beta==0.1), expression(beta==0.5), expression(beta==1)), cex.axis = 2, tick = F)
 dev.off()
 
 ################################################                                      			      	################################################
