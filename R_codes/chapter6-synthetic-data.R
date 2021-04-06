@@ -10,6 +10,61 @@ source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 ################################################   NONSEPARABLE VS SEPARABLE MODELS   ################################################
 ################################################                                      ################################################
 
+# simulate 100 datasets from exageostat with space-time interaction parameter beta = 0.1, 0.5, 0.9 at N = 400 spatial locations and T = 100 temporal locations
+
+# save the measurements and space time locations in folder Data/synthetic/beta-0.1/
+
+# split simulated data into 60% training and 40% testing
+
+N = 40000
+
+# if the subset for training is chosen randomly
+
+for(set in 1:100){
+	obs <- read.table(paste(root, 'Data/synthetic/beta-0.1/Z_' , N, '_', set, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+	locs <- read.table(paste(root, 'Data/synthetic/beta-0.1/LOC_', N, '_', set, sep = ''), header = FALSE, sep = ",") %>% as.matrix()
+
+	n <- nrow(locs)
+	set.seed(1234)
+	subset_index <- sample(1:n, floor(0.4 * n))
+
+	# SAVING TRAINING AND TESTING DATASETS training and testing datasets
+
+	write.table(locs[-subset_index, 1:2], file = paste(root, "Data/synthetic/beta-0.1/LOC_SPACE_", N, "_", set, "_training", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(locs[-subset_index, 3], file = paste(root, "Data/synthetic/beta-0.1/LOC_TIME_", N, "_", set, "_training", sep = ''), sep = ",",row.names = FALSE, col.names = FALSE)
+	write.table(obs[-subset_index] - mean(obs[-subset_index]), file = paste(root, "Data/synthetic/beta-0.1/Z_", N, "_", set, "_training", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+	write.table(locs[subset_index, 1:2], file = paste(root, "Data/synthetic/beta-0.1/LOC_SPACE_", N, "_", set, "_testing", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(locs[subset_index, 3], file = paste(root, "Data/synthetic/beta-0.1/LOC_TIME_", N, "_", set, "_testing", sep = ''), sep = ",",row.names = FALSE, col.names = FALSE)
+	write.table(obs[subset_index] - mean(obs[subset_index]), file = paste(root, "Data/synthetic/beta-0.1/Z_", N, "_", set, "_testing", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+}
+
+# if the subset for training is chosen using the 10 days and testing is the future 10 days
+# this is for N = 400 and T = 20
+
+in_sample <- 1:(400 * 10)
+out_sample <- max(in_sample) + 1:(400 * 1)
+
+for(set in c(2:5, 7:67, 69:100)){
+	obs <- read.table(paste(root, 'Data/synthetic/beta-1/Z_', N, '_', set, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+	locs <- read.table(paste(root, 'Data/synthetic/beta-1/LOC_', N, '_', set, sep = ''), header = FALSE, sep = ",") %>% as.matrix()
+
+	n <- nrow(locs)
+	write.table(locs[in_sample, 1:2], file = paste(root, "Data/synthetic/beta-1/LOC_SPACE_", N, "_", set, "_training", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(locs[in_sample, 3], file = paste(root, "Data/synthetic/beta-1/LOC_TIME_", N, "_", set, "_training", sep = ''), sep = ",",row.names = FALSE, col.names = FALSE)
+	write.table(obs[in_sample] - mean(obs[in_sample]), file = paste(root, "Data/synthetic/beta-1/Z_", N, "_", set, "_training", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+	write.table(locs[out_sample, 1:2], file = paste(root, "Data/synthetic/beta-1/LOC_SPACE_", N, "_", set, "_testing", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(locs[out_sample, 3], file = paste(root, "Data/synthetic/beta-1/LOC_TIME_", N, "_", set, "_testing", sep = ''), sep = ",",row.names = FALSE, col.names = FALSE)
+	write.table(obs[out_sample] - mean(obs[out_sample]), file = paste(root, "Data/synthetic/beta-1/Z_", N, "_", set, "_testing", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+}
+
+
+# RETRIEVE THE RESULTS FROM EXAGEOSTAT AND FORMAT THE MSPE AND TOTAL KRIGING VALUES INTO A MATRIX OF 6 COLUMNS AND SAVE THEM IN THE TEXT FILE nonsep_vs_sep_mspe AND nonsep_vs_sep_kriging_variance
+
+# PLOT THE VALUES
+
 DAT_MSPE <- read.table(paste(root, 'Results/nonsep_vs_sep_mspe', sep = ''), header = FALSE, sep = ",") %>% as.matrix()
 DAT_KRIGING_VARIANCE <- read.table(paste(root, 'Results/nonsep_vs_sep_kriging_variance', sep = ''), header = FALSE, sep = ",") %>% as.matrix()
 
@@ -17,7 +72,7 @@ pdf(file = paste(root, 'Figures/6-total-kriging-variance.pdf', sep = ''), width 
 
 boxplot(DAT_KRIGING_VARIANCE, xlab = "beta", ylab = "Total Kriging Variance", xaxt = 'n', col = rep(c("#28908C", "#F28F20"), 3))
 
-points(1:6, c(rep(true_mspe_var_0.1[2], 2), rep(true_mspe_var_0.5[2], 2), rep(true_mspe_var_1[2], 2)), pch = 18, cex = 2, lwd = 2)#, col = '#BEB200')
+points(1:6, c(rep(312.03, 2), rep(356.29, 2), rep(387.24, 2)), pch = 18, cex = 2, lwd = 2)#, col = '#BEB200')
 
 axis(1, at = c(1.5, 3.5, 5.5), labels = c('0.1', '0.5', '1'))
 
@@ -34,6 +89,75 @@ boxplot(DAT_MSPE, xlab = expression(beta), ylab = "MSPE", xaxt = 'n', col = rep(
 legend(0.5, 0.0258, legend = c("Separable", "Nonseparable"), pt.cex = c(2, 2), box.lty = 0, inset = .02, col = c("#28908C", "#F28F20"), pch = 15)
 axis(1, at = c(1.5, 3.5, 5.5), labels = c('0.1', '0.5', '1'))
 
+dev.off()
+
+################################################                                      			      	################################################
+################################################   PLOT REALIZATION FROM A NONSEPARABLE AND SEPARABLE MODEL   	################################################
+################################################                                      				################################################
+
+obs1 <- read.table(paste(root, 'Data/synthetic/Z_nonseparable', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+locs1 <- read.table(paste(root, 'Data/synthetic/LOC_nonseparable', sep = ''), header = FALSE, sep = ",") %>% as.matrix()
+
+obs2 <- read.table(paste(root, 'Data/synthetic/Z_separable', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+locs2 <- read.table(paste(root, 'Data/synthetic/LOC_separable', sep = ''), header = FALSE, sep = ",") %>% as.matrix()
+
+zlim_range <- range(c(obs1, obs2))
+
+jpeg(file = paste(root, 'Figures/6-synthetic_data_matern_nonsep_vs_sep.jpg', sep = ''), width = 1500, height = 700)
+
+split.screen( rbind(c(0.08,0.94,0.12,0.92), c(0.94,0.98,0.12,0.92)))
+split.screen( figs = c( 2, 5 ), screen = 1 )
+
+hr_count <- 0
+
+for(hr in 1:5){
+	
+	hr_count <- hr_count + 1
+	
+	screen(2 + hr_count)
+
+	ind <- which(locs1[, 3] == hr)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,0.2,0.2))
+	quilt.plot(locs1[ind, 1], locs1[ind, 2], obs1[ind, 1], ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, nx = 50, ny = 50, zlim = zlim_range, axes = F)
+
+	if(hr == 1){
+		mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5)
+		mtext('Nonseparable', side = 2, line = 7, adj = 0.5, cex = 2.5, col = 4, font = 2)
+		axis(2, cex.axis = 2)
+	}
+	mtext(paste('t = ', hr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+}
+
+for(hr in 1:5){
+	
+	hr_count <- hr_count + 1
+	
+	screen(2 + hr_count)
+	
+	ind <- which(locs2[, 3] == hr)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,0.2,0.2))
+	quilt.plot(locs2[ind, 1], locs2[ind, 2], obs2[ind, 1], ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, nx = 50, ny = 50, zlim = zlim_range, axes = F)
+
+	if(hr == 1){
+		mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5)
+		mtext('Separable', side = 2, line = 7, adj = 0.5, cex = 2.5, col = 4, font = 2)
+		axis(2, cex.axis = 2)
+	}
+	mtext(expression(s[x]), side = 1, line = 4, adj = 0.5,  cex = 2.5)
+	axis(1, at = seq(0, 1, by = 0.2), labels = c("0", "0.2", "0.4", "0.6", "0.8", "1"), cex.axis = 3, mgp=c(3, 3, 0))
+}
+
+screen(2)
+
+x1 <- c(0.025,0.1,0.1,0.025) + 0.1
+y1 <- c(0.3,0.3,0.7,0.7)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-3, 3, length.out = 3), 1), CEX = 2)
+
+close.screen( all=TRUE)
 dev.off()
 
 
