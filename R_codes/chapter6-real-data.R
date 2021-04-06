@@ -70,20 +70,175 @@ for(tt in 1:TT){
 	Z <- rbind(Z, cbind(res_mat1[tt, ], cbind(locs, rep(tt, nrow(locs)))))	
 }
 
+################################################                                      ################################################
+################################################               FULL DATASET           ################################################
+################################################                                      ################################################
+
 # SPLIT THE DATA INTO 90% TRAINING AND 10% TESTING
 
 set.seed(1234)
 subset_index <- sample(1:nrow(Z), 0.9 * N * TT)
 
+locs_s_sub_train <- Z[subset_index, 2:3]                
+locs_t_sub_train <- Z[subset_index, 4]              
+obs_sub_train <- Z[subset_index, 1]
+
+locs_s_sub_test <- Z[-subset_index, 2:3]                
+locs_t_sub_test <- Z[-subset_index, 4]              
+obs_sub_test <- Z[-subset_index, 1]
+
 # SAVE THE TRAINING AND TESTING DATASETS IN A TXT FILE
 
-write.table(Z[-subset_index, 2:3], file = paste(root, "Data/locations_space_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(Z[-subset_index, 4], file = paste(root, "Data/locations_time_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(Z[-subset_index, 1] - mean(Z[-subset_index, 1]), file = paste(root, "Data/data_st_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(locs_s_sub_test, file = paste(root, "Data/locations_space_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(locs_t_sub_test, file = paste(root, "Data/locations_time_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(obs_sub_test - mean(obs_sub_test), file = paste(root, "Data/data_st_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
 
-write.table(Z[subset_index, 2:3], file = paste(root, "Data/locations_space_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(Z[subset_index, 4], file = paste(root, "Data/locations_time_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(Z[subset_index, 1] - mean(Z[subset_index, 1]), file = paste(root, "Data/data_st_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(locs_s_sub_train, file = paste(root, "Data/locations_space_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(locs_t_sub_train, file = paste(root, "Data/locations_time_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(obs_sub_train - mean(obs_sub_train), file = paste(root, "Data/data_st_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+# PLOT THE FIRST FIVE SPACE TIME IMAGES
+
+start_hr <- 1			
+
+zlim_range1 <- range(res_mat1[start_hr:(start_hr + 4),])
+zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
+
+jpeg(file = paste(root, 'Figures/6-application_data.jpg', sep = ''), width = 1800, height = 600)
+
+split.screen( rbind(c(0.05,0.95,0.1,0.85), c(0.95,0.99,0.1,0.95)))
+split.screen( figs = c( 1, 5 ), screen = 1 )
+
+hr_count <- 0
+for(hr in start_hr:(start_hr + 4)){
+	
+	hr_count <- hr_count + 1
+	
+	screen(2 + hr_count)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,0.2,0.2))
+	
+	if(hr_count == 1){
+	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
+	#mtext('log PM 2.5', side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 'blue')
+	}else{
+	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
+	}
+	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+	
+	if(hr_count == 1){
+		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+	}
+
+	if(aggregate == 'hourly'){
+		mtext(paste(hr - 1 - floor(hr/24) * 24, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}else if(aggregate == 'daily'){
+		mtext(paste('January ', hr, ', ', yr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}else{
+		mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+		#mtext(paste((hr - 1) * aggregate, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}
+	mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+	if(hr == 3) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2)
+}
+
+
+screen(2)
+
+x1 <- c(0.025,0.12,0.12,0.025) + 0.1
+y1 <- c(0.3,0.3,0.7,0.7)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(zlim_range1[1], zlim_range1[2], length.out = 5), 1), CEX = 2)
+
+close.screen( all=TRUE)
+dev.off()
+
+# PLOTTING REAL DATA WITH PREDICTIONS
+
+obs_sub_pred <- read.table(paste(root, 'Results/6-predicted_values_FULL', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+
+zlim_range <- range(c(res_mat1[start_hr:(start_hr + 4),], obs_sub_pred))
+
+jpeg(file = paste(root, 'Figures/6-application_data.jpg', sep = ''), width = 2000, height = 1000)
+
+split.screen( rbind(c(0.08,0.94,0.08,0.88), c(0.94,0.98,0.08,0.88)))
+split.screen( figs = c( 2, 5 ), screen = 1 )
+
+hr_count <- 0
+
+for(hr in start_hr:(start_hr + 4)){
+	
+	ind_train <- which(locs_t_sub_train == hr)
+	ind_test <- which(locs_t_sub_test == hr)
+
+	hr_count <- hr_count + 1
+	
+	screen(2 + hr_count)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,0.2,0.2))
+	
+	if(hr == 1){
+	quilt.plot(c(locs_s_sub_train[ind_train, 1], locs_s_sub_test[ind_test, 1]), c(locs_s_sub_train[ind_train, 2], locs_s_sub_test[ind_test, 2]), c(obs_sub_train[ind_train], obs_sub_test[ind_test]), zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+	mtext('Real Data', side = 2, line = 7, adj = 0.5, cex = 2.5, font = 2, col = 'blue')
+	}else{
+	quilt.plot(c(locs_s_sub_train[ind_train, 1], locs_s_sub_test[ind_test, 1]), c(locs_s_sub_train[ind_train, 2], locs_s_sub_test[ind_test, 2]), c(obs_sub_train[ind_train], obs_sub_test[ind_test]), zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+	}
+	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+	
+	if(hr == 1){
+		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+	}
+
+	if(aggregate == 'hourly'){
+		mtext(paste(hr - 1 - floor(hr/24) * 24, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}else if(aggregate == 'daily'){
+		mtext(paste('January ', hr, ', ', yr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}else{
+		mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}
+	if(hr == 3) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2)
+}
+
+for(hr in start_hr:(start_hr + 4)){
+	
+	hr_count <- hr_count + 1
+
+	ind_train <- which(locs_t_sub_train == hr)
+	ind_test <- which(locs_t_sub_test == hr)
+
+	screen(2 + hr_count)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,0.2,0.2))
+	
+	if(hr == 1){
+	quilt.plot(c(locs_s_sub_train[ind_train, 1], locs_s_sub_test[ind_test, 1]), c(locs_s_sub_train[ind_train, 2], locs_s_sub_test[ind_test, 2]), c(obs_sub_train[ind_train], obs_sub_pred[ind_test]), zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
+	mtext('Training & Predictions', side = 2, line = 7, adj = 0.5, cex = 2.5, font = 2, col = 'blue')
+	}else{
+	quilt.plot(c(locs_s_sub_train[ind_train, 1], locs_s_sub_test[ind_test, 1]), c(locs_s_sub_train[ind_train, 2], locs_s_sub_test[ind_test, 2]), c(obs_sub_train[ind_train], obs_sub_pred[ind_test]), zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
+	}
+	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+	
+	if(hr == 1){
+		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+	}
+
+	mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+}
+screen(2)
+
+x1 <- c(0.025,0.1,0.1,0.025) + 0.1
+y1 <- c(0.3,0.3,0.7,0.7)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-3, 3, length.out = 3), 1), CEX = 3)
+
+close.screen( all=TRUE)
+dev.off()
+
+################################################                                      ################################################
+################################################        SUBSET OF FULL DATASET        ################################################
+################################################                                      ################################################
+
 
 # CHOOSE ONLY A SMALL SAMPLE WITH 100,000 SPACE-TIME MEASUREMENTS
 
