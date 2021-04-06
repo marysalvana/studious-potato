@@ -70,6 +70,21 @@ for(tt in 1:TT){
 	Z <- rbind(Z, cbind(res_mat1[tt, ], cbind(locs, rep(tt, nrow(locs)))))	
 }
 
+# SPLIT THE DATA INTO 90% TRAINING AND 10% TESTING
+
+set.seed(1234)
+subset_index <- sample(1:nrow(Z), 0.9 * N * TT)
+
+# SAVE THE TRAINING AND TESTING DATASETS IN A TXT FILE
+
+write.table(Z[-subset_index, 2:3], file = paste(root, "Data/locations_space_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Z[-subset_index, 4], file = paste(root, "Data/locations_time_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Z[-subset_index, 1] - mean(Z[-subset_index, 1]), file = paste(root, "Data/data_st_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+write.table(Z[subset_index, 2:3], file = paste(root, "Data/locations_space_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Z[subset_index, 4], file = paste(root, "Data/locations_time_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Z[subset_index, 1] - mean(Z[subset_index, 1]), file = paste(root, "Data/data_st_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
 # CHOOSE ONLY A SMALL SAMPLE WITH 100,000 SPACE-TIME MEASUREMENTS
 
 small_scale_n <- 100000
@@ -220,9 +235,11 @@ obs_sub_test <- res_mat1[time_index_for_plotting, -new_test_ind]
 locs_s_sub_test <- locs[-new_test_ind, ]
 locs_t_sub_test <- rep(time_index_for_plotting, nrow(locs_s_sub))
 
-#write.table(locs_s_sub_test, file = paste(root, "Data/locations_space_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-#write.table(locs_t_sub_test, file = paste(root, "Data/locations_time_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-#write.table(obs_sub_test - mean(obs_sub_test), file = paste(root, "Data/data_st_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+# SAVE THE NEW TESTING DATASET ALL FROM THE SAME TIME
+
+write.table(locs_s_sub_test, file = paste(root, "Data/locations_space_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(locs_t_sub_test, file = paste(root, "Data/locations_time_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(obs_sub_test - mean(obs_sub_test), file = paste(root, "Data/data_st_testing_set_", set, "_", cv_n_test, "-FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
 
 
 # LOAD PREDICTIONS TXT FILE IMPORTED FROM EXAGEOSTAT
