@@ -197,7 +197,7 @@ for(hr in start_hr:(start_hr + 4)){
 	}else{
 		mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 	}
-	if(hr == 3) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2)
+	if(hr == 3) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2, col = 4)
 }
 
 for(hr in start_hr:(start_hr + 4)){
