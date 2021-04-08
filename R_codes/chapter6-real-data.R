@@ -157,7 +157,8 @@ dev.off()
 
 obs_sub_pred <- read.table(paste(root, 'Results/6-predicted_values_FULL', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
-zlim_range <- range(c(res_mat1[start_hr:(start_hr + 4),], obs_sub_pred))
+start_hr <- 1
+zlim_range1 <- range(c(res_mat1[start_hr:(start_hr + 4),], obs_sub_pred))
 
 jpeg(file = paste(root, 'Figures/6-application_data.jpg', sep = ''), width = 2000, height = 1000)
 
@@ -165,7 +166,6 @@ split.screen( rbind(c(0.08,0.94,0.08,0.88), c(0.94,0.98,0.08,0.88)))
 split.screen( figs = c( 2, 5 ), screen = 1 )
 
 hr_count <- 0
-
 for(hr in start_hr:(start_hr + 4)){
 	
 	ind_train <- which(locs_t_sub_train == hr)
@@ -184,6 +184,7 @@ for(hr in start_hr:(start_hr + 4)){
 	}else{
 	quilt.plot(c(locs_s_sub_train[ind_train, 1], locs_s_sub_test[ind_test, 1]), c(locs_s_sub_train[ind_train, 2], locs_s_sub_test[ind_test, 2]), c(obs_sub_train[ind_train], obs_sub_test[ind_test]), zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
 	}
+	points(locs_s_sub_test[ind_test, ], col = 'black', pch = 4, cex = 1, lwd = 2)
 	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
 	
 	if(hr == 1){
@@ -218,6 +219,7 @@ for(hr in start_hr:(start_hr + 4)){
 	}else{
 	quilt.plot(c(locs_s_sub_train[ind_train, 1], locs_s_sub_test[ind_test, 1]), c(locs_s_sub_train[ind_train, 2], locs_s_sub_test[ind_test, 2]), c(obs_sub_train[ind_train], obs_sub_pred[ind_test]), zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
 	}
+	points(locs_s_sub_test[ind_test, ], col = 'black', pch = 4, cex = 1, lwd = 2)
 	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
 	
 	if(hr == 1){
@@ -230,7 +232,7 @@ screen(2)
 
 x1 <- c(0.025,0.1,0.1,0.025) + 0.1
 y1 <- c(0.3,0.3,0.7,0.7)
-legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-3, 3, length.out = 3), 1), CEX = 3)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 3), 1), CEX = 3)
 
 close.screen( all=TRUE)
 dev.off()
