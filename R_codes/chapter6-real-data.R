@@ -140,7 +140,7 @@ for(hr in start_hr:(start_hr + 4)){
 		#mtext(paste((hr - 1) * aggregate, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 	}
 	mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
-	if(hr == 3) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2)
+	if(hr == 3) mtext('Mean log PM2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2, col = 4)
 }
 
 
@@ -148,7 +148,7 @@ screen(2)
 
 x1 <- c(0.025,0.12,0.12,0.025) + 0.1
 y1 <- c(0.3,0.3,0.7,0.7)
-legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(zlim_range1[1], zlim_range1[2], length.out = 5), 1), CEX = 2)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 5), 1), CEX = 2)
 
 close.screen( all=TRUE)
 dev.off()
