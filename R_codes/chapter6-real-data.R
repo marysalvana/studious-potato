@@ -153,6 +153,62 @@ legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out 
 close.screen( all=TRUE)
 dev.off()
 
+# PLOT THE FIRST SIX SPACE TIME IMAGES IN TWO ROWS
+
+start_hr <- 1
+zlim_range1 <- range(res_mat1[start_hr:(start_hr + 5),])
+zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
+
+jpeg(file = paste(root, 'Figures/6-application_data.jpg', sep = ''), width = 1200, height = 1000)
+
+split.screen( rbind(c(0.06,0.94,0.08,0.93), c(0.94,0.98,0.08,0.93)))
+split.screen( figs = c( 2, 3 ), screen = 1 )
+
+hr_count <- 0
+for(hr in start_hr:(start_hr + 5)){
+	
+	hr_count <- hr_count + 1
+	
+	screen(2 + hr_count)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,1,0.2))
+	
+	if(hr %in% c(1, 4)){
+	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+	}else{
+	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+	}
+	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+	
+	if(hr %in% c(1, 4)){
+		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+	}
+	if(hr >= 4){	
+		axis(1, cex.axis = 2)
+		mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+	}
+
+	if(aggregate == 'hourly'){
+		mtext(paste(hr - 1 - floor(hr/24) * 24, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}else if(aggregate == 'daily'){
+		mtext(paste('January ', hr, ', ', yr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}else{
+		mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+	}
+	if(hr == 2) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 6, cex = 3, font = 2, col = 4)
+}
+
+screen(2)
+
+x1 <- c(0.025,0.1,0.1,0.025) + 0.1
+y1 <- c(0.3,0.3,0.7,0.7)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 3), 1), CEX = 3)
+
+close.screen( all=TRUE)
+dev.off()
+
+
 # PLOTTING REAL DATA WITH PREDICTIONS
 
 obs_sub_pred <- read.table(paste(root, 'Results/6-predicted_values_FULL', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
