@@ -202,7 +202,7 @@ for(hr in start_hr:(start_hr + 5)){
 screen(2)
 
 x1 <- c(0.025,0.1,0.1,0.025) + 0.1
-y1 <- c(0.3,0.3,0.7,0.7)
+y1 <- c(0.27,0.27,0.65,0.65)
 legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 3), 1), CEX = 3)
 
 close.screen( all=TRUE)
