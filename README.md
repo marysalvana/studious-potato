@@ -1,2 +1,2 @@
 # studious-potato
-thesis files
+consolidated thesis files
