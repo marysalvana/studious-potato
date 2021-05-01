@@ -7,7 +7,7 @@ source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 
-N <- 11
+N <- 50
 n <- N^2
 grid_x <- seq(from = 0, to = 1, length.out = N)
 grid_y <- seq(from = 0, to = 1, length.out = N)
@@ -52,15 +52,15 @@ binned <- cbind(binned_temp$dist, binned_temp$avg1)
 
 cat('Bin the spatial lags into a few representative spatial lags...', '\n')
 
-nbins <- 10
+nbins <- 20
 dist.bin <- seq(0, max(sqrt(xlag^2 + ylag^2)), length = nbins)
 
 EMP_VEC <- EMP_COUNT <- rep(0, nbins)
 
 for(gg in 1:nrow(binned)){
 
-	IND <- findInterval(binned[gg, 3], dist.bin)
-	EMP_VEC[IND] <- EMP_VEC[IND] + binned[gg, 4] 
+	IND <- findInterval(binned[gg, 1], dist.bin)
+	EMP_VEC[IND] <- EMP_VEC[IND] + binned[gg, 2] 
 	EMP_COUNT[IND] <- EMP_COUNT[IND] + 1
 }
 
@@ -68,8 +68,14 @@ EMP_COV <- EMP_VEC / EMP_COUNT
 
 cat('Plot the empirical covariance...', '\n')
 
-pdf(file = paste(root, 'Figures/empirical-covariance.pdf', sep = ''), width = 11, height = 6.5)
+cat('Guess estimate of the theoretical covariance...', '\n')
 
-plot(dist.bin, EMP_VEC, pch = 20)
+sigma <- 1
+beta <- 0.23
+nu <- 1
+dist0 <- seq(0, max(sqrt(xlag^2 + ylag^2)), length = 500)
+theoretical <- ifelse(dist0 != 0, (dist0 / beta)^nu * besselK(dist0 / beta, nu) / (2^(nu - 1) * gamma(nu)), sigma)
 
-dev.off()
+plot(dist.bin, EMP_COV, pch = 20)
+lines(dist0, theoretical, col = 'red', lwd = 2)
+
