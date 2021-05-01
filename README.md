@@ -8,3 +8,7 @@ Chapter 3 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple A
 Chapter 4 - Multivariate Nonstationary Taylor's Hypothesis
 Chapter 5 - Multivariate ExaGeoStat
 Chapter 6 - Spatio-Temporal ExaGeoStat
+
+##Packages
+
+library(mvnfast)

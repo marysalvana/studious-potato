@@ -6,7 +6,7 @@ MATERN_UNI_STATIONARY <- function(PARAMETER, LOCATION){
 
 	dist0 <- dist(x = LOCATION, diag = TRUE, upper = TRUE) %>% as.matrix()
 
-	S <- ifelse(dist0 != 0, (dist0 / beta)^nu * besselK(dist0 / beta, nu) / (2^(nu - 1) * gamma(nu)), sigma2)
+	S <- ifelse(dist0 != 0, (dist0 / beta)^nu * besselK(dist0 / beta, nu) / (2^(nu - 1) * gamma(nu)) * sigma2, sigma2)
 
   	return(S)
 }
