@@ -12,3 +12,4 @@ Chapter 6 - Spatio-Temporal ExaGeoStat
 ##Packages
 
 library(mvnfast)
+library(future.apply)
