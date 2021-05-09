@@ -81,11 +81,12 @@ return(alpha.set)
 #####################################################
 #### Gaussian kernal
 #####################################################
-#sd.set<-c(1:4)/16
-sd.set<- seq(0.01, 0.2, length.out = 5)
+
+sd.set<-c(1:4)/8
+#sd.set<- seq(0.06, 0.5, length.out = 5)
+nu.set <- c(0.5, 1)
 gg<-NULL
 loc.mu<-NULL
-
 for(i in 1:length(sd.set)){
 	cat(i, '\n')
 	vari<-sd.set[i]^2
@@ -93,7 +94,7 @@ for(i in 1:length(sd.set)){
 	mu.m<-sd.set[i]
 	hex.nx<-floor((1+1.5*mu.m)/mu.m)
 	hex.ny<-floor((1+mu.m*sqrt(3)/2)/(mu.m*sqrt(3)/2))
-	anchor_locs <- expand.grid(-1:(hex.ny), -1:(hex.nx)) %>% as.matrix()
+	anchor_locs <- expand.grid(-2:(hex.ny), -2:(hex.nx)) %>% as.matrix()
 	loc.jk <- cbind(mu.m * (anchor_locs[, 2] + (anchor_locs[, 1] %% 2) / 2), mu.m * anchor_locs[, 1] * sqrt(3)/2)
 	loc.mui <- cbind(rep(sd.set[i], nrow(loc.jk)), loc.jk)
 	temp.g <- distR_C(loc.jk, loc1)
@@ -101,6 +102,29 @@ for(i in 1:length(sd.set)){
 	gg<-rbind(gg,temp.g)
 	loc.mu<-rbind(loc.mu,loc.mui)
 }
+
+shift <- 0
+for(nu_val in 1:length(nu.set)){
+	shift <- shift - 0.1
+	for(i in 1:length(sd.set)){
+		cat(i, '\n')
+		vari<-sd.set[i]^2
+		loc.mui<-NULL
+		mu.m<-sd.set[i]
+		hex.nx<-floor((1+1.5*mu.m)/mu.m)
+		hex.ny<-floor((1+mu.m*sqrt(3)/2)/(mu.m*sqrt(3)/2))
+		anchor_locs <- expand.grid(-1:(hex.ny), -1:(hex.nx)) %>% as.matrix()
+		loc.jk <- cbind(mu.m * (anchor_locs[, 2] + (anchor_locs[, 1] %% 2) / 2) + shift, mu.m * anchor_locs[, 1] * sqrt(3)/2 + shift)
+		loc.mui <- cbind(rep(sd.set[i], nrow(loc.jk)), loc.jk)
+		temp.g <- distR_C(loc.jk, loc1)
+		temp.g<- Matern(temp.g, range = vari, nu = nu.set[nu_val])
+		gg<-rbind(gg,temp.g)
+		loc.mu<-rbind(loc.mu,loc.mui)
+	}
+}
+
+ind <- which(loc.mu[, 2] > 0.5 | loc.mu[, 3] > 0.5)
+gg <- gg[-ind, ]
 
 ####################################################
 #### Gaussian kernal matrix for Lasso
@@ -125,34 +149,9 @@ si.fix<-cbind(si.fix,si.temp2)
 si.fix_new <- future_apply(AM, 1, function(x) x %o% x )
 si.fix <- cbind(si.fix, si.fix_new[si.temp4, ])
 si.dim<-dim(si.fix)
-si.fix<-matrix(as.numeric(si.fix),si.dim[1],si.dim[2])
+si <- si.fix<-matrix(as.numeric(si.fix),si.dim[1],si.dim[2])
 
-###################################################
-#### finding  alpha_l for W_l
-###################################################
 Sig.em<-cov1
-p<-c(1:20)/20-1/40
-alpha.set<-find.alpha(dist1[A,A],Sig.em,p)
-
-Adist<-dist1[A,A]
-
-###################################################
-#### matrix for lasso
-###################################################
-si<-NULL
-for(i in 1:length(alpha.set)){
-	exp.temp<-NULL
-	for(s in 1:length(A)){
-		cat('i = ', i/length(alpha.set), '; s = ', s/length(A), '\n')	
-			temp<-exp(-abs(Adist[s:a,s])/alpha.set[i])
-			exp.temp<-c(exp.temp,temp)
-		}
-	si<-cbind(si,exp.temp)
-	}
-si.dim<-dim(si)
-si<-matrix(as.numeric(si),si.dim[1],si.dim[2])
-si<-cbind(si.fix,si)
-
 
 AY.lars<-NULL
 loc.y<-NULL
@@ -179,25 +178,10 @@ pre1<-predict.larspositive(test1,s=s.temp,type="coefficient", mode="fraction")$c
 #please set s.temp<-0.5050505.
 
 
-pre1[1]  #parameter estimate:error
-M.n<-dim(gg)[1]
-est.basis<-cbind(loc.mu,pre1[2:(M.n+1)])
-est.basis[est.basis[,4]>0,]   #parameter estimate:basis function
-est.stat<-cbind(alpha.set,pre1[-c(1:(M.n+1))])
-est.stat[est.stat[,2]>0,] #parameter estimate: stationary component
-
 ####est. Sigma by CLS
 M<-gg
 M.n<-dim(gg)[1]
-Sig.g<-(t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) #+diag(pre1[1],n)
-
-Sig.exp<-matrix(0,n * TT, n * TT)
-for(i in 1:length(alpha.set)){
-	Sig.expt<-exp(-dist1/alpha.set[i])*pre1[-c(1:(M.n+1))][i]
-	Sig.exp<-Sig.exp+Sig.expt
-  }
-Sig.orig<-Sig.CLS<-Sig.g+Sig.exp
-
+Sig.CLS <- Sig.g<-(t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) +diag(pre1[1],n)
 
 ###################################################################################################################
 
@@ -230,37 +214,39 @@ image.plot(matrix(Sig.CLS[reference_locations[1], 1:n], N, N), zlim = c(0, max(S
 dev.off()
 
 
+pdf(file = paste(root, 'Figures/4-basis-function-location.pdf', sep = ''), width = 15, height = 15)
+plot(loc.mu[, 2:3])
+dev.off()
 
 NEGLOGLIK <- function(p){
 	
-	M<-gg
-	M.n<-dim(gg)[1]
 	Sig.g<-(t(M)%*%diag(p[(2:(M.n+1))])%*%M) +diag(p[1],n)
 
-	#Sig.exp<-matrix(0,n * TT, n * TT)
-	#for(i in 1:length(alpha.set)){
-	#	Sig.expt<-exp(-dist1/alpha.set[i])*p[-c(1:(M.n+1))][i]
-	#	Sig.exp<-Sig.exp+Sig.expt
-	 # }
-	theo_cov<-Sig.g+Sig.exp
+	Sig.CLS <- theo_cov<-Sig.g+Sig.exp
 	
-	err <- sum((theo_cov - cov1)^2)
+	err <- sum((theo_cov - cov1)^2/(1.001 - cov1))
 
 	return(err)
 }
-set.seed(1234)
-init <- runif(M.n+1)
-#init <- pre1[(1:(M.n+1))]
-fit <- optim(par = init, fn = NEGLOGLIK, control = list(trace = 5, maxit = 10000))
+
+M<-gg
+M.n<-dim(gg)[1]
+
+#set.seed(1234)
+#init <- runif(M.n+1)
+init <- pre1[(1:(M.n+1))]
+fit <- optim(par = init, fn = NEGLOGLIK, control = list(trace = 5, maxit = 1500))
 
 p <- fit$par
+
+
 
 ###################################################################################
 
 
-NN <- 50
-grid_x <- seq(from = -3, to = 3, length.out = NN)
-grid_y <- seq(from = -3, to = 3, length.out = NN)
+NN <- 30
+grid_x <- seq(from = 0, to = 1, length.out = NN)
+grid_y <- seq(from = 0, to = 1, length.out = NN)
 X <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
 nn <- nrow(X)
@@ -306,15 +292,22 @@ NEGLOGLIK <- function(p){
 	parWarpsSum <- rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T))
 
 	spline1 <- c(parWarpsSum %*% sigma)
-	nonparametric_cov_est <- outer(spline1, spline1, FUN = "*") + Sig.orig
+	nonparametric_cov_est <- outer(spline1, spline1, FUN = "*") #+ Sig.orig
 	
-	err <- sum((nonparametric_cov_est - cov1)^2)
+	err <- sum((nonparametric_cov_est[reference_locations, ] - cov1[reference_locations, ])^2)
 	return(err)
 }
 
-jWarp = 1:7
+jWarp = 1:3
 init2 <- rep(0, length(jWarp))
-fit2 <- optim(par = init2, fn = NEGLOGLIK, control = list(trace = 5, maxit = 3000))
+#set.seed(1234)
+#init2 <- runif(length(jWarp), -1, 1)
+fit2 <- optim(par = init2, fn = NEGLOGLIK, control = list(trace = 5, maxit = 2000))
+
+
+jWarp = 1:4
+fit2 <- optim(par = c(fit2$par, 0), fn = NEGLOGLIK, control = list(trace = 5, maxit = 2000))
+
 for(tt in 1:1000){
 	fit2 <- optim(par = fit2$par, fn = NEGLOGLIK, control = list(trace = 5, maxit = 500)) 
 }
@@ -333,18 +326,35 @@ beta1 <- p[1:length(jWarp)]
 parWarpsSum <- rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T))
 
 spline1 <- c(parWarpsSum %*% sigma)
-Sig.CLS <- nonparametric_cov_est <- outer(spline1, spline1, FUN = "*") + Sig.orig
+Sig.CLS <- nonparametric_cov_est <- outer(spline1, spline1, FUN = "*")# + Sig.orig
 
 Sig.CLS[1:5, 1:5]
 
+reference_locations <- c(1, ceiling(n / 2) + ceiling(N / 2))
 
 pdf(file = paste(root, 'Figures/4-basis-function-estimation.pdf', sep = ''), width = 15, height = 15)
 
 par(mfrow = c(2, 2))
 
-image.plot(matrix(cov1[reference_locations[2], 1:n], N, N))
+par(mai=c(1.5, 1.5, 1.5, 1.5))
+par(pty="s") 
+image.plot(matrix(cov1[reference_locations[2], 1:n], N, N), zlim = c(0, max(Sig.CLS)))
+mtext('Reference Location 1', side = 2, line = 3, cex = 1.5, font = 2, col="#000080")
+mtext('Theoretical Covariance at t = 1', side = 3, line = 2, cex = 1.5, font = 2, col="#000080")
 
-image.plot(matrix(Sig.CLS[reference_locations[2], 1:n], N, N))
+par(mai=c(1.5, 1.5, 1.5, 1.5))
+par(pty="s") 
+image.plot(matrix(Sig.CLS[reference_locations[2], 1:n], N, N), zlim = c(0, max(Sig.CLS)))
+mtext('Estimated Covariance at t = 1', side = 3, line = 2, cex = 1.5, font = 2, col="#000080")
+
+par(mai=c(1.5, 1.5, 1.5, 1.5))
+par(pty="s") 
+image.plot(matrix(cov1[reference_locations[1], 1:n], N, N), zlim = c(0, max(Sig.CLS)))
+mtext('Reference Location 2', side = 2, line = 3, cex = 1.5, font = 2, col="#000080")
+
+par(mai=c(1.5, 1.5, 1.5, 1.5))
+par(pty="s") 
+image.plot(matrix(Sig.CLS[reference_locations[1], 1:n], N, N), zlim = c(0, max(Sig.CLS)))
 
 dev.off()
 
