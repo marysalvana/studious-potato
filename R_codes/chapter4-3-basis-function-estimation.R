@@ -179,11 +179,6 @@ image.plot(matrix(Sig.CLS[reference_locations[1], 1:n], N, N), zlim = c(0, max(S
 
 dev.off()
 
-
-pdf(file = paste(root, 'Figures/4-basis-function-location.pdf', sep = ''), width = 15, height = 15)
-plot(loc.mu[, 2:3])
-dev.off()
-
 ###################################################################################
 
 NEGLOGLIK <- function(p){
@@ -321,4 +316,110 @@ Sig.CLS <-(t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) +diag(pre1[1],n * TT)
 
 fit <- optim(par = fit$par, fn = NEGLOGLIK, control = list(trace = 5, maxit = 5000))
 
+p <- fit$par
+TT <- 5
+loc2 <- sim_grid_locations
+for(tt in 1:(TT - 1)){
+	loc2 <- rbind(loc2, cbind(sim_grid_locations[, 1] - p[1] * tt, sim_grid_locations[, 2] - p[2] * tt))
+}
+
+dist1<-as.matrix(dist(loc2))
+
+A <- 1:nrow(loc2)
+
+sd.set<- seq(0.08, 0.5, length.out = 5)
+nu.set <- c(0.5, 1, 1.5)
+gg<-NULL
+loc.mu<-NULL
+shift <- 0
+for(nu_val in 1:length(nu.set)){
+	shift <- shift + 0.2
+	for(i in 1:length(sd.set)){
+		vari<-sd.set[i]^2
+		loc.mui<-NULL
+		mu.m<-sd.set[i]
+		hex.nx<-floor((1+1.5*mu.m)/mu.m)
+		hex.ny<-floor((1+mu.m*sqrt(3)/2)/(mu.m*sqrt(3)/2))
+		anchor_locs <- expand.grid(-1:(hex.ny), -1:(hex.nx)) %>% as.matrix()
+		loc.jk <- cbind(mu.m * (anchor_locs[, 2] + (anchor_locs[, 1] %% 2) / 2) + shift, mu.m * anchor_locs[, 1] * sqrt(3)/2 + shift)
+		loc.mui <- cbind(rep(sd.set[i], nrow(loc.jk)), loc.jk)
+		temp.g <- distR_C(loc.jk, loc2)
+		temp.g<- Matern(temp.g, range = vari, nu = nu.set[nu_val])
+		gg<-rbind(gg,temp.g)
+		loc.mu<-rbind(loc.mu,loc.mui)
+	}
+}
+
+####est. Sigma by CLS
+M<-gg
+M.n<-dim(gg)[1]
+Sig.CLS <-(t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) +diag(pre1[1],n * TT)
+
+#########################   TESTING   ########################
+
+cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT)
+cov2 <- Sig.CLS
+
+set.seed(1234)
+r1 <- mvrnorm(500, rep(0, ncol(cov1)), cov1)
+set.seed(1234)
+r2 <- mvrnorm(500, rep(0, ncol(Sig.CLS)), Sig.CLS)
+set.seed(5678)
+r3 <- mvrnorm(500, rep(0, ncol(Sig.CLS)), Sig.CLS)
+
+EMPCOV <- array(, dim = c(dim(cov1), 2))
+
+EMPCOV[, , 1] <- cov(r1)
+EMPCOV[, , 2] <- cov(r2)
+EMPCOV[, , 3] <- cov(r3)
+
+adj_mu <- 0.1001
+adj_sig <- 0.001
+
+
+locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
+locs_sub_length <- length(locs_sub_index)
+
+DIFF_ARRAY_EMP <- array(, dim = c(locs_sub_length, TT - 1, length(adj_mu), dim(EMPCOV)[3]))
+
+for(model in 1:dim(EMPCOV)[3]){
+
+	empcov <- EMPCOV[, , model]
+
+	for(m in 1:length(adj_mu)){
+
+		set.seed(1234)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = wind_mu + adj_mu[m], Sigma = matrix(wind_sigma * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+
+		count <- 1
+		diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
+		for(l2 in locs_sub_index){
+			diff_cov_emp_temp <- diff_cov_theo_temp <- NULL
+			for(t2 in 1:(TT - 1)){
+				cov_purely_time_emp <- empcov[l2, l2 + n * t2]
+				cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
+				for(k in 1:n_sim){
+					wind <- WIND_SIMULATED[k, ]
+					new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
+					find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+
+					cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+				}
+				cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
+				diff_cov_emp_temp <- c(diff_cov_emp_temp, cov_purely_time_emp - cov_purely_space_emp)
+			}
+			diff_cov_emp[count, ] <- diff_cov_emp_temp
+			count <- count + 1
+		}
+
+		DIFF_ARRAY_EMP[, , m, model] <- diff_cov_emp
+	}
+}
+
+dataX <- t(DIFF_ARRAY_EMP[, , 1, 1])
+dataRef <- t(DIFF_ARRAY_EMP[, , 1, 2])
+g <- t(DIFF_ARRAY_EMP[, , 1, 3])
+
+rank.value=rankTest(dataX, g, dataRef)
+rank.value
 
