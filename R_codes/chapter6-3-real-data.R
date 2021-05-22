@@ -81,14 +81,13 @@ data_format <- function(aggregate = 1){
 	return(FINAL_DATA)
 }
 
-#Check visually if the plot is second-order stationary in its covariance structure
-#### PLOT THE FIRST FIVE SPACE TIME IMAGES
+#Function to check visually if the plot is second-order stationary in its covariance structure
 
-plot_spacetime_image_for_checking_stationarity <- function(data_matrix, file_name, start_hr = 1, saudi = F){
+plot_realdata_for_checking_stationarity <- function(data_list, file_name, start_hr = 1, saudi = F){
 
-	cat('PLOTTING SPACETIME IMAGES TO CHECK STATIONARITY', '\n')
+	cat('PLOTTING THE FIRST FIVE SPACETIME IMAGES TO CHECK STATIONARITY', '\n')
 
-	zlim_range1 <- range(data_matrix[["data_matrix"]][start_hr:(start_hr + 4),])
+	zlim_range1 <- range(data_list[["data_matrix"]][start_hr:(start_hr + 4),])
 	zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
 
 	jpeg(file = paste(root, 'Figures/', file_name, sep = ''), width = 1800, height = 600)
@@ -107,10 +106,10 @@ plot_spacetime_image_for_checking_stationarity <- function(data_matrix, file_nam
 		par(mai=c(0.2,0.2,0.2,0.2))
 		
 		if(hr_count == 1){
-		quilt.plot(data_matrix[["locations"]][, 1], data_matrix[["locations"]][, 2], data_matrix[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
+		quilt.plot(data_list[["locations"]][, 1], data_list[["locations"]][, 2], data_list[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
 		#mtext('log PM 2.5', side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 'blue')
 		}else{
-		quilt.plot(data_matrix[["locations"]][, 1], data_matrix[["locations"]][, 2], data_matrix[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
+		quilt.plot(data_list[["locations"]][, 1], data_list[["locations"]][, 2], data_list[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
 		}
 
 		if(saudi){
@@ -147,102 +146,133 @@ plot_spacetime_image_for_checking_stationarity <- function(data_matrix, file_nam
 	cat("Check image in ", paste(root, 'Figures/', file_name, sep = ''), '\n')
 }
 
+#Function for manuscript ready real data plots
+
+plot_realdata_for_manuscript <- function(data_list, file_name, start_hr = 1, saudi = F){
+
+	cat('PLOTTING THE FIRST SIX SPACETIME IMAGES FOR MANUSCRIPT', '\n')
+
+	zlim_range1 <- range(data_list[["data_matrix"]][start_hr:(start_hr + 5),])
+	zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
+
+	jpeg(file = paste(root, 'Figures/', file_name, sep = ''), width = 1200, height = 1000)
+
+	split.screen( rbind(c(0.06,0.94,0.08,0.93), c(0.94,0.98,0.08,0.93)))
+	split.screen( figs = c( 2, 3 ), screen = 1 )
+
+	hr_count <- 0
+	for(hr in start_hr:(start_hr + 5)){
+		
+		hr_count <- hr_count + 1
+		
+		screen(2 + hr_count)
+
+		par(pty = 's')
+		par(mai=c(0.2,0.2,1,0.2))
+		
+		if(hr %in% c(1, 4)){
+		quilt.plot(data_list[["locations"]][, 1], data_list[["locations"]][, 2], data_list[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+		}else{
+		quilt.plot(data_list[["locations"]][, 1], data_list[["locations"]][, 2], data_list[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+		}
+		if(saudi){
+			map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+		}else{
+			map("state", xlim =  c(-120, -70), ylim = c(30, 50), lwd = 0.75, add = T)
+		}
+		
+		if(hr %in% c(1, 4)){
+			mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+		}
+		if(hr >= 4){	
+			axis(1, cex.axis = 2)
+			mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+		}
+
+		if(aggregate == 'hourly'){
+			mtext(paste(hr - 1 - floor(hr/24) * 24, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+		}else if(aggregate == 'daily'){
+			mtext(paste('January ', hr, ', ', yr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+		}else{
+			mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+		}
+		if(hr == 2) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 6, cex = 3, font = 2, col = 4)
+	}
+
+	screen(2)
+
+	x1 <- c(0.025,0.1,0.1,0.025) + 0.1
+	y1 <- c(0.27,0.27,0.65,0.65)
+	legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 3), 1), CEX = 3)
+
+	close.screen( all=TRUE)
+	dev.off()
+
+	cat("Check image in ", paste(root, 'Figures/', file_name, sep = ''), '\n')
+}
+
+
+#Function to create training and testing datasets
+
+data_split <- function(data_list, training_percent = 0.9, temporal_length = NULL, file_name){
+
+	cat('SPLITTING THE DATA INTO TRAINING AND TESTING DATASETS', '\n')
+
+	#### CREATE A MATRIX OF MEASUREMENTS AND THEIR CORRESPONDING SPACE-TIME LOCATIONS: (RESIDUALS, LONGITUDE, LATITUDE, TIME) OF DIMENSION (NT) x 4 
+	#### IF TT is very big, you can just get a subset 1:temporal_length
+
+	N <- dim(data_list[["data_matrix"]])[2]
+	if(is.null(temporal_length)){
+		TT <- dim(data_list[["data_matrix"]])[1]
+	}else{
+		TT <- temporal_length
+	}
+
+	Z <- NULL
+
+	for(tt in 1:TT){
+		Z <- rbind(Z, cbind(data_list[["data_matrix"]][tt, ], data_list[["locations"]], rep(tt, N)))	
+	}
+
+	#### SPLIT THE DATA INTO 90% TRAINING AND 10% TESTING
+
+	set.seed(1234)
+	subset_index <- sample(1:nrow(Z), training_percent * N * TT)
+
+	locs_s_sub_train <- Z[subset_index, 2:3]                
+	locs_t_sub_train <- Z[subset_index, 4]              
+	obs_sub_train <- Z[subset_index, 1]
+
+	locs_s_sub_test <- Z[-subset_index, 2:3]                
+	locs_t_sub_test <- Z[-subset_index, 4]              
+	obs_sub_test <- Z[-subset_index, 1]
+
+	#### SAVE THE TRAINING AND TESTING DATASETS IN A TXT FILE
+
+	write.table(locs_s_sub_test, file = paste(root, "Data/sc21/locations_space_testing_FULL", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(locs_t_sub_test, file = paste(root, "Data/sc21/locations_time_testing_FULL", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(obs_sub_test - mean(obs_sub_test), file = paste(root, "Data/sc21/data_st_testing_FULL", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+	write.table(locs_s_sub_train, file = paste(root, "Data/sc21/locations_space_training_FULL", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(locs_t_sub_train, file = paste(root, "Data/sc21/locations_time_training_FULL", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(obs_sub_train - mean(obs_sub_train), file = paste(root, "Data/sc21/data_st_training_FULL", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+	cat("Textfiles are saved in ", paste(root, 'Data/sc21/', sep = ''), '\n')
+}
+
+
+
 DATA <- data_format(aggregate = 1)
-plot_spacetime_image_for_checking_stationarity(data_matrix = DATA, file_name = '6-application-US-data-scratch.jpg', start_hr = 1, saudi = F)
 
-# CREATE A MATRIX OF MEASUREMENTS AND THEIR CORRESPONDING SPACE-TIME LOCATIONS: (RESIDUALS, LONGITUDE, LATITUDE, TIME) OF DIMENSION (NT) x 4 
+plot_realdata_for_checking_stationarity(data_list = DATA, file_name = '6-application-US-data-scratch.jpg', start_hr = 1, saudi = F)
 
-Z <- NULL
+data_split(data_list = DATA, training_percent = 0.9, temporal_length = 500, file_name = '_US')
 
-for(tt in 1:TT){
-	Z <- rbind(Z, cbind(res_mat1[tt, ], LOCS, rep(tt, N)))	
-}
+plot_realdata_for_manuscript(data_list = DATA, file_name = '6-application-US-data.jpg', start_hr = 1, saudi = F)
 
-################################################                                      ################################################
-################################################               FULL DATASET           ################################################
-################################################                                      ################################################
 
-# SPLIT THE DATA INTO 90% TRAINING AND 10% TESTING
 
-set.seed(1234)
-subset_index <- sample(1:nrow(Z), 0.9 * N * TT)
 
-locs_s_sub_train <- Z[subset_index, 2:3]                
-locs_t_sub_train <- Z[subset_index, 4]              
-obs_sub_train <- Z[subset_index, 1]
-
-locs_s_sub_test <- Z[-subset_index, 2:3]                
-locs_t_sub_test <- Z[-subset_index, 4]              
-obs_sub_test <- Z[-subset_index, 1]
-
-# SAVE THE TRAINING AND TESTING DATASETS IN A TXT FILE
-
-write.table(locs_s_sub_test, file = paste(root, "Data/locations_space_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(locs_t_sub_test, file = paste(root, "Data/locations_time_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(obs_sub_test - mean(obs_sub_test), file = paste(root, "Data/data_st_testing_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-
-write.table(locs_s_sub_train, file = paste(root, "Data/locations_space_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(locs_t_sub_train, file = paste(root, "Data/locations_time_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(obs_sub_train - mean(obs_sub_train), file = paste(root, "Data/data_st_training_FULL", sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
-
-# PLOT THE FIRST SIX SPACE TIME IMAGES IN TWO ROWS
-
-start_hr <- 1
-zlim_range1 <- range(res_mat1[start_hr:(start_hr + 5),])
-zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
-
-jpeg(file = paste(root, 'Figures/6-application_data.jpg', sep = ''), width = 1200, height = 1000)
-
-split.screen( rbind(c(0.06,0.94,0.08,0.93), c(0.94,0.98,0.08,0.93)))
-split.screen( figs = c( 2, 3 ), screen = 1 )
-
-hr_count <- 0
-for(hr in start_hr:(start_hr + 5)){
-	
-	hr_count <- hr_count + 1
-	
-	screen(2 + hr_count)
-
-	par(pty = 's')
-	par(mai=c(0.2,0.2,1,0.2))
-	
-	if(hr %in% c(1, 4)){
-	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
-	}else{
-	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
-	}
-	if(saudi){
-		map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
-	}else{
-		map("state", xlim =  c(-120, -70), ylim = c(30, 50), lwd = 0.75, add = T)
-	}
-	
-	if(hr %in% c(1, 4)){
-		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-	}
-	if(hr >= 4){	
-		axis(1, cex.axis = 2)
-		mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
-	}
-
-	if(aggregate == 'hourly'){
-		mtext(paste(hr - 1 - floor(hr/24) * 24, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-	}else if(aggregate == 'daily'){
-		mtext(paste('January ', hr, ', ', yr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-	}else{
-		mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-	}
-	if(hr == 2) mtext('Mean log PM 2.5 Concentration for the Period', side = 3, line = 6, cex = 3, font = 2, col = 4)
-}
-
-screen(2)
-
-x1 <- c(0.025,0.1,0.1,0.025) + 0.1
-y1 <- c(0.27,0.27,0.65,0.65)
-legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 3), 1), CEX = 3)
-
-close.screen( all=TRUE)
-dev.off()
 
 
 # PLOTTING REAL DATA WITH PREDICTIONS
