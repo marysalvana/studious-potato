@@ -1,3 +1,8 @@
+## INPUT: N x T matrix of log PM2.5 concentrations, where N is the number of spatial locations and T is the number of temporal locations 
+## INPUT: N x 2 matrix of locations containing longitude and latitude
+
+## OUTPUT: textfile of large training and testing datasets (measurements, spatial locations, temporal locations)
+
 directory <- '/home/salvanmo/Desktop/'
 
 root <- paste(directory, 'studious-potato/', sep = '')
@@ -5,38 +10,41 @@ root <- paste(directory, 'studious-potato/', sep = '')
 source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 
-# LOAD HOURLY DATA FROM 2016 TO 2019
-
-start_yr <- 2016
+## LOAD HOURLY DATA FROM 2016 TO 2019
 
 DAT <- NULL
 
-for(yr in start_yr:(start_yr + 3)){
+for(YEAR in 2016:2019){
 
-	# LOAD DATA FOR EACH YEAR, EACH YEAR HAS A 550 x 8760 MATRIX, WHERE COLUMNS ARE MEASUREMENTS IN TIME AND ROWS ARE MEASUREMENTS IN SPACE
-	cat("LOADING HOURLY DATA IN ", yr, ". . .", '\n')
-	DAT_temp <- read.table(paste('/home/salvanmo/Desktop/ipdps/Data/pm_', yr, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+	cat("LOADING MEASUREMENTS FROM ", YEAR, ". . .", '\n')
+	DAT_temp <- read.table(paste(root, "Data/sc21/pm_US_", YEAR, sep = ""), header = FALSE, sep = ",") %>% as.matrix()
 	DAT <- cbind(DAT, DAT_temp)
+
 }
 
-# LOAD LOCATION COORDINATES
+cat("LOADING LOCATIONS . . .", '\n')
 
-locs <- read.table(paste('/home/salvanmo/Desktop/ipdps/Data/locations_550', sep = ''), header = FALSE, sep = ",")
+LOCS <- read.table(paste(root, "Data/sc21/locations_US_", YEAR, sep = ""), header = FALSE, sep = ",")
 
-N <- nrow(locs)
+N <- nrow(LOCS)
 
-# TAKE THE AVERAGE OF THE MEASUREMENTS FOR TWO DAYS BECAUSE THEY YIELD APPROXIMATELY SECOND-ORDER STATIONARY MEASUREMENTS
+## Indicate the degree of aggregation you want.
 
-aggregate <- 48
+#### FOR PM2.5 DATA OVER SAUDI, TAKE THE AVERAGE OF THE MEASUREMENTS FOR TWO DAYS (aggregate = 48) BECAUSE THEY YIELD APPROXIMATELY SECOND-ORDER STATIONARY MEASUREMENTS
+
+aggregate = 6
 TT <- floor(ncol(DAT) / aggregate)		#total number of temporal locations to be analyzed
 
 DAT2 <- matrix(, ncol = TT, nrow = N)
+
+cat("AGGREGATING DATA BY TAKING THE MEAN OF ", aggregate, "CONSECUTIVE MEASUREMENTS", '\n')
 
 for(aa in 1:TT){
 	DAT2[, aa] <- apply(DAT[, (aa - 1) * aggregate + 1:aggregate], 1, mean)
 }
 
-# REMOVE THE SPATIO-TEMPORALLY VARYING TREND USING EMPIRICAL ORTHOGONAL FUNCTIONS
+#Remove the nonstationarity in the mean
+#### REMOVE THE SPATIO-TEMPORALLY VARYING TREND USING EMPIRICAL ORTHOGONAL FUNCTIONS
 
 Yhat1 <- res_mat1 <- obs_mat_standardized1 <- t(DAT2)
 
@@ -62,13 +70,15 @@ for(nn in 1:ncol(obs_mat_standardized1)){
 
 }
 
-# CREATE A MATRIX OF MEASUREMENTS AND THEIR CORRESPONDING SPACE-TIME LOCATIONS: (RESIDUALS, LONGITUDE, LATITUDE, TIME) OF DIMENSION 401500 x 4 
+# CREATE A MATRIX OF MEASUREMENTS AND THEIR CORRESPONDING SPACE-TIME LOCATIONS: (RESIDUALS, LONGITUDE, LATITUDE, TIME) OF DIMENSION (NT) x 4 
 
 Z <- NULL
 
 for(tt in 1:TT){
-	Z <- rbind(Z, cbind(res_mat1[tt, ], cbind(locs, rep(tt, nrow(locs)))))	
+	Z <- rbind(Z, cbind(res_mat1[tt, ], rep(tt, N)))	
 }
+
+Z <- cbind(Z[, 1], LOCS, Z[, 2])
 
 ################################################                                      ################################################
 ################################################               FULL DATASET           ################################################
@@ -104,7 +114,7 @@ start_hr <- 1
 zlim_range1 <- range(res_mat1[start_hr:(start_hr + 4),])
 zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
 
-jpeg(file = paste(root, 'Figures/6-application_data.jpg', sep = ''), width = 1800, height = 600)
+jpeg(file = paste(root, 'Figures/6-application-US-data.jpg', sep = ''), width = 1800, height = 600)
 
 split.screen( rbind(c(0.05,0.95,0.1,0.85), c(0.95,0.99,0.1,0.95)))
 split.screen( figs = c( 1, 5 ), screen = 1 )
@@ -120,10 +130,10 @@ for(hr in start_hr:(start_hr + 4)){
 	par(mai=c(0.2,0.2,0.2,0.2))
 	
 	if(hr_count == 1){
-	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
+	quilt.plot(LOCS[, 1], LOCS[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
 	#mtext('log PM 2.5', side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 'blue')
 	}else{
-	quilt.plot(locs[, 1], locs[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
+	quilt.plot(LOCS[, 1], LOCS[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
 	}
 	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
 	
@@ -142,7 +152,6 @@ for(hr in start_hr:(start_hr + 4)){
 	mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
 	if(hr == 3) mtext('Mean log PM2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2, col = 4)
 }
-
 
 screen(2)
 

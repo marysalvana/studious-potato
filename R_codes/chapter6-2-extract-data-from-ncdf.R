@@ -95,7 +95,6 @@ extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, regio
 	return(FINAL_DATA)
 }
 
-## Indicate (1) the degree of aggregation you want, (2) year to which you want to get the data
 ## Indicate (1) the variable name and (2) the year to which you want to get the data.
 
 VARIABLE_NAME = "DUSMASS25"
