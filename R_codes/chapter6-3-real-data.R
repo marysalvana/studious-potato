@@ -10,74 +10,85 @@ root <- paste(directory, 'studious-potato/', sep = '')
 source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 
-## LOAD HOURLY DATA FROM 2016 TO 2019
+data_format <- function(aggregate = 1){
 
-DAT <- NULL
+	## LOAD HOURLY DATA FROM 2016 TO 2019
 
-for(YEAR in 2016:2019){
+	DAT <- NULL
 
-	cat("LOADING MEASUREMENTS FROM ", YEAR, ". . .", '\n')
-	DAT_temp <- read.table(paste(root, "Data/sc21/pm_US_", YEAR, sep = ""), header = FALSE, sep = ",") %>% as.matrix()
-	DAT <- cbind(DAT, DAT_temp)
+	for(YEAR in 2016:2019){
 
-}
+		cat("LOADING MEASUREMENTS FROM ", YEAR, ". . .", '\n')
+		DAT_temp <- read.table(paste(root, "Data/sc21/pm_US_", YEAR, sep = ""), header = FALSE, sep = ",") %>% as.matrix()
+		DAT <- cbind(DAT, DAT_temp)
 
-cat("LOADING LOCATIONS . . .", '\n')
+	}
 
-LOCS <- read.table(paste(root, "Data/sc21/locations_US_", YEAR, sep = ""), header = FALSE, sep = ",")
+	cat("LOADING LOCATIONS . . .", '\n')
 
-N <- nrow(LOCS)
+	LOCS <- read.table(paste(root, "Data/sc21/locations_US_", YEAR, sep = ""), header = FALSE, sep = ",")
 
-## Indicate the degree of aggregation you want.
+	N <- nrow(LOCS)
 
-#### FOR PM2.5 DATA OVER SAUDI, TAKE THE AVERAGE OF THE MEASUREMENTS FOR TWO DAYS (aggregate = 48) BECAUSE THEY YIELD APPROXIMATELY SECOND-ORDER STATIONARY MEASUREMENTS
+	## Indicate the degree of aggregation you want.
 
-aggregate = 4
-TT <- floor(ncol(DAT) / aggregate)		#total number of temporal locations to be analyzed
+	#### FOR PM2.5 DATA OVER SAUDI, TAKE THE AVERAGE OF THE MEASUREMENTS FOR TWO DAYS (aggregate = 48) BECAUSE THEY YIELD APPROXIMATELY SECOND-ORDER STATIONARY MEASUREMENTS
 
-DAT2 <- matrix(, ncol = TT, nrow = N)
+	TT <- floor(ncol(DAT) / aggregate)		#total number of temporal locations to be analyzed
 
-cat("AGGREGATING DATA BY TAKING THE MEAN OF ", aggregate, "CONSECUTIVE MEASUREMENTS", '\n')
+	if(aggregate > 1){
+		DAT2 <- matrix(, ncol = TT, nrow = N)
 
-for(aa in 1:TT){
-	DAT2[, aa] <- apply(DAT[, (aa - 1) * aggregate + 1:aggregate], 1, mean)
-}
+		cat("AGGREGATING DATA BY TAKING THE MEAN OF ", aggregate, "CONSECUTIVE MEASUREMENTS", '\n')
 
-#Remove the nonstationarity in the mean
-#### REMOVE THE SPATIO-TEMPORALLY VARYING TREND USING EMPIRICAL ORTHOGONAL FUNCTIONS
+		for(aa in 1:TT){
+			DAT2[, aa] <- apply(DAT[, (aa - 1) * aggregate + 1:aggregate], 1, mean)
+		}
+	}else{
+		DAT2 <- DAT
+	}
 
-Yhat1 <- res_mat1 <- obs_mat_standardized1 <- t(DAT2)
+	#Remove the nonstationarity in the mean
+	#### REMOVE THE SPATIO-TEMPORALLY VARYING TREND USING EMPIRICAL ORTHOGONAL FUNCTIONS
 
-obs_mat_SVD1 <- svd(obs_mat_standardized1)
+	cat('Remove the nonstationarity in the mean', '\n')
 
-variance.explained1 = prop.table(obs_mat_SVD1$d^2)
+	Yhat1 <- res_mat1 <- obs_mat_standardized1 <- t(DAT2)
 
-percent_sum_squared_variation1 <- cumsum(variance.explained1)[cumsum(variance.explained1) >= 0.9]
-min_percent_sum_squared_variation1 <- min(percent_sum_squared_variation1)
-num_singular_vec1 <- which(cumsum(variance.explained1) == min_percent_sum_squared_variation1) 
+	obs_mat_SVD1 <- svd(obs_mat_standardized1)
 
-X1 <- cbind(rep(1, nrow(obs_mat_SVD1$u)), obs_mat_SVD1$u)
+	variance.explained1 = prop.table(obs_mat_SVD1$d^2)
 
-for(nn in 1:ncol(obs_mat_standardized1)){
+	percent_sum_squared_variation1 <- cumsum(variance.explained1)[cumsum(variance.explained1) >= 0.9]
+	min_percent_sum_squared_variation1 <- min(percent_sum_squared_variation1)
+	num_singular_vec1 <- which(cumsum(variance.explained1) == min_percent_sum_squared_variation1) 
 
-	beta_hat <- solve(t(X1[, 1:num_singular_vec1]) %*% X1[, 1:num_singular_vec1]) %*% t(X1[, 1:num_singular_vec1]) %*% obs_mat_standardized1[, nn]
+	X1 <- cbind(rep(1, nrow(obs_mat_SVD1$u)), obs_mat_SVD1$u)
 
-	Yhat1[, nn] <- Yhat_temp <- X1[, 1:num_singular_vec1] %*% beta_hat
+	for(nn in 1:ncol(obs_mat_standardized1)){
 
-	err <- Yhat_temp - obs_mat_standardized1[, nn]
+		beta_hat <- solve(t(X1[, 1:num_singular_vec1]) %*% X1[, 1:num_singular_vec1]) %*% t(X1[, 1:num_singular_vec1]) %*% obs_mat_standardized1[, nn]
 
-	res_mat1[, nn] <- err/sd(err)
+		Yhat1[, nn] <- Yhat_temp <- X1[, 1:num_singular_vec1] %*% beta_hat
 
+		err <- Yhat_temp - obs_mat_standardized1[, nn]
+
+		res_mat1[, nn] <- err/sd(err)
+
+	}
+	FINAL_DATA <- list("data_matrix" = res_mat1, "locations" = LOCS)
+	
+	return(FINAL_DATA)
 }
 
 #Check visually if the plot is second-order stationary in its covariance structure
 #### PLOT THE FIRST FIVE SPACE TIME IMAGES
 
-plot_spacetime_image_for_checking_stationarity <- function(DATA_MATRIX, file_name, start_hr = 1, saudi = F){
+plot_spacetime_image_for_checking_stationarity <- function(data_matrix, file_name, start_hr = 1, saudi = F){
 
 	cat('PLOTTING SPACETIME IMAGES TO CHECK STATIONARITY', '\n')
 
-	zlim_range1 <- range(DATA_MATRIX[start_hr:(start_hr + 4),])
+	zlim_range1 <- range(data_matrix[["data_matrix"]][start_hr:(start_hr + 4),])
 	zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
 
 	jpeg(file = paste(root, 'Figures/', file_name, sep = ''), width = 1800, height = 600)
@@ -96,10 +107,10 @@ plot_spacetime_image_for_checking_stationarity <- function(DATA_MATRIX, file_nam
 		par(mai=c(0.2,0.2,0.2,0.2))
 		
 		if(hr_count == 1){
-		quilt.plot(LOCS[, 1], LOCS[, 2], DATA_MATRIX[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
+		quilt.plot(data_matrix[["locations"]][, 1], data_matrix[["locations"]][, 2], data_matrix[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
 		#mtext('log PM 2.5', side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 'blue')
 		}else{
-		quilt.plot(LOCS[, 1], LOCS[, 2], DATA_MATRIX[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
+		quilt.plot(data_matrix[["locations"]][, 1], data_matrix[["locations"]][, 2], data_matrix[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
 		}
 
 		if(saudi){
@@ -136,7 +147,8 @@ plot_spacetime_image_for_checking_stationarity <- function(DATA_MATRIX, file_nam
 	cat("Check image in ", paste(root, 'Figures/', file_name, sep = ''), '\n')
 }
 
-plot_spacetime_image_for_checking_stationarity(DATA_MATRIX = res_mat1, file_name = '6-application-US-data.jpg', start_hr = 100, saudi = F)
+DATA <- data_format(aggregate = 1)
+plot_spacetime_image_for_checking_stationarity(data_matrix = DATA, file_name = '6-application-US-data-scratch.jpg', start_hr = 1, saudi = F)
 
 # CREATE A MATRIX OF MEASUREMENTS AND THEIR CORRESPONDING SPACE-TIME LOCATIONS: (RESIDUALS, LONGITUDE, LATITUDE, TIME) OF DIMENSION (NT) x 4 
 
