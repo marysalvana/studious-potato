@@ -10,10 +10,6 @@ root <- paste(directory, 'studious-potato/', sep = '')
 source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 
-## Indicate the region of study.
-
-saudi = F
-
 ## LOAD HOURLY DATA FROM 2016 TO 2019
 
 DAT <- NULL
@@ -77,64 +73,70 @@ for(nn in 1:ncol(obs_mat_standardized1)){
 #Check visually if the plot is second-order stationary in its covariance structure
 #### PLOT THE FIRST FIVE SPACE TIME IMAGES
 
-start_hr <- 6			
+plot_spacetime_image_for_checking_stationarity <- function(DATA_MATRIX, file_name, start_hr = 1, saudi = F){
 
-zlim_range1 <- range(res_mat1[start_hr:(start_hr + 4),])
-zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
+	cat('PLOTTING SPACETIME IMAGES TO CHECK STATIONARITY', '\n')
 
-jpeg(file = paste(root, 'Figures/6-application-US-data.jpg', sep = ''), width = 1800, height = 600)
+	zlim_range1 <- range(DATA_MATRIX[start_hr:(start_hr + 4),])
+	zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
 
-split.screen( rbind(c(0.05,0.95,0.1,0.85), c(0.95,0.99,0.1,0.95)))
-split.screen( figs = c( 1, 5 ), screen = 1 )
+	jpeg(file = paste(root, 'Figures/', file_name, sep = ''), width = 1800, height = 600)
 
-hr_count <- 0
-for(hr in start_hr:(start_hr + 4)){
-	
-	hr_count <- hr_count + 1
-	
-	screen(2 + hr_count)
+	split.screen( rbind(c(0.05,0.95,0.1,0.85), c(0.95,0.99,0.1,0.95)))
+	split.screen( figs = c( 1, 5 ), screen = 1 )
 
-	par(pty = 's')
-	par(mai=c(0.2,0.2,0.2,0.2))
-	
-	if(hr_count == 1){
-	quilt.plot(LOCS[, 1], LOCS[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
-	#mtext('log PM 2.5', side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 'blue')
-	}else{
-	quilt.plot(LOCS[, 1], LOCS[, 2], res_mat1[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
+	hr_count <- 0
+	for(hr in start_hr:(start_hr + 4)){
+		
+		hr_count <- hr_count + 1
+		
+		screen(2 + hr_count)
+
+		par(pty = 's')
+		par(mai=c(0.2,0.2,0.2,0.2))
+		
+		if(hr_count == 1){
+		quilt.plot(LOCS[, 1], LOCS[, 2], DATA_MATRIX[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
+		#mtext('log PM 2.5', side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 'blue')
+		}else{
+		quilt.plot(LOCS[, 1], LOCS[, 2], DATA_MATRIX[hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', yaxt = 'n', cex.lab = 4, add.legend = F, cex.axis = 2)
+		}
+
+		if(saudi){
+			map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
+		}else{
+			map("state", xlim =  c(-120, -70), ylim = c(30, 50), lwd = 0.75, add = T)
+		}
+		
+		if(hr_count == 1){
+			mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+		}
+
+		if(aggregate == 'hourly'){
+			mtext(paste(hr - 1 - floor(hr/24) * 24, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+		}else if(aggregate == 'daily'){
+			mtext(paste('January ', hr, ', ', yr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+		}else{
+			mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+			#mtext(paste((hr - 1) * aggregate, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+		}
+		mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+		if(hr == 3) mtext('Mean log PM2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2, col = 4)
 	}
 
-	if(saudi){
-		map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
-	}else{
-		map("state", xlim =  c(-120, -70), ylim = c(30, 50), lwd = 0.75, add = T)
-	}
-	
-	if(hr_count == 1){
-		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-	}
+	screen(2)
 
-	if(aggregate == 'hourly'){
-		mtext(paste(hr - 1 - floor(hr/24) * 24, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-	}else if(aggregate == 'daily'){
-		mtext(paste('January ', hr, ', ', yr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-	}else{
-		mtext(paste('January ', 2 * hr_count - 1, '-', 2 * hr_count, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-		#mtext(paste((hr - 1) * aggregate, ':00', sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-	}
-	mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
-	if(hr == 3) mtext('Mean log PM2.5 Concentration for the Period', side = 3, line = 7, cex = 3, font = 2, col = 4)
+	x1 <- c(0.025,0.12,0.12,0.025) + 0.1
+	y1 <- c(0.3,0.3,0.7,0.7)
+	legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 5), 1), CEX = 2)
+
+	close.screen( all=TRUE)
+	dev.off()
+
+	cat("Check image in ", paste(root, 'Figures/', file_name, sep = ''), '\n')
 }
 
-screen(2)
-
-x1 <- c(0.025,0.12,0.12,0.025) + 0.1
-y1 <- c(0.3,0.3,0.7,0.7)
-legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 5), 1), CEX = 2)
-
-close.screen( all=TRUE)
-dev.off()
-
+plot_spacetime_image_for_checking_stationarity(DATA_MATRIX = res_mat1, file_name = '6-application-US-data.jpg', start_hr = 100, saudi = F)
 
 # CREATE A MATRIX OF MEASUREMENTS AND THEIR CORRESPONDING SPACE-TIME LOCATIONS: (RESIDUALS, LONGITUDE, LATITUDE, TIME) OF DIMENSION (NT) x 4 
 
