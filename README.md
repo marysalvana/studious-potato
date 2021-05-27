@@ -3,11 +3,11 @@ consolidated thesis files
 
 ## Table of Contents
 Chapter 1 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
-Chapter 2 - Lagrangian Spatio-Temporal Nonstationary Cross-Covariance Function
-Chapter 3 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple Advections
-Chapter 4 - Multivariate Nonstationary Taylor's Hypothesis
-Chapter 5 - Multivariate ExaGeoStat
-Chapter 6 - Spatio-Temporal ExaGeoStat
+<br> Chapter 2 - Lagrangian Spatio-Temporal Nonstationary Cross-Covariance Function
+<br> Chapter 3 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple Advections
+<br> Chapter 4 - Multivariate Nonstationary Taylor's Hypothesis
+<br> Chapter 5 - Multivariate ExaGeoStat
+<br> Chapter 6 - Spatio-Temporal ExaGeoStat
 
 ## Packages
 
@@ -18,17 +18,17 @@ library(future.apply)
 ## Offline Data Links
 
 SC21 Netcdf SAUDI Data
-/yourlainess/phd/data/sc21/SAUDI
+<br> /yourlainess/phd/data/sc21/SAUDI
 
 SC21 Netcdf US Data
-/yourlainess/phd/data/sc21/US
+<br> /yourlainess/phd/data/sc21/US
 
 ## Download Links:
 
 pm2.5: https://disc.gsfc.nasa.gov/datasets/M2T1NXAER_5.12.4/summary
-wind: https://disc.gsfc.nasa.gov/datasets/M2I1NXASM_5.12.4/summary
-pm2.5 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NVAER_5.12.4/summary
-wind 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NPASM_5.12.4/summary
+<br> wind: https://disc.gsfc.nasa.gov/datasets/M2I1NXASM_5.12.4/summary
+<br> pm2.5 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NVAER_5.12.4/summary
+<br> wind 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NPASM_5.12.4/summary
 
 subregion for saudi land and ocean region
 
