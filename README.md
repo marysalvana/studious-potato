@@ -9,7 +9,30 @@ Chapter 4 - Multivariate Nonstationary Taylor's Hypothesis
 Chapter 5 - Multivariate ExaGeoStat
 Chapter 6 - Spatio-Temporal ExaGeoStat
 
-##Packages
+## Packages
 
 library(mvnfast)
 library(future.apply)
+
+
+## Offline Data Links
+
+SC21 Netcdf SAUDI Data
+/yourlainess/phd/data/sc21/SAUDI
+
+SC21 Netcdf US Data
+/yourlainess/phd/data/sc21/US
+
+## Download Links:
+
+pm2.5: https://disc.gsfc.nasa.gov/datasets/M2T1NXAER_5.12.4/summary
+wind: https://disc.gsfc.nasa.gov/datasets/M2I1NXASM_5.12.4/summary
+pm2.5 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NVAER_5.12.4/summary
+wind 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NPASM_5.12.4/summary
+
+subregion for saudi land and ocean region
+
+Spatial subset: 26.719,5.625,85.078,42.188
+
+covariates: https://disc.gsfc.nasa.gov/datasets/M2I3NVASM_5.12.4/summary
+
