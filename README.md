@@ -12,7 +12,7 @@ Chapter 1 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 ## Packages
 
 library(mvnfast)
-library(future.apply)
+<br> library(future.apply)
 
 
 ## Offline Data Links

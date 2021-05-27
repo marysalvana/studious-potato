@@ -5,7 +5,23 @@
 
 directory <- '/home/salvanmo/Desktop/'
 
-data_directory <- '/media/salvanmo/yourlainess/phd/data/sc21/US/'
+area <- 'SAUDI'
+
+if(area == 'US'){
+	data_directory <- '/media/salvanmo/yourlainess/phd/data/sc21/US/'
+	VARIABLE_NAME = "DUSMASS25"
+	SUBSET = NULL
+	REGION = NULL
+	GET_SUBSET = F
+	NCDF_EXTENSION = ".SUB.nc"
+}else if(area == 'SAUDI'){
+	data_directory <- '/media/salvanmo/yourlainess/phd/data/sc21/SAUDI/'
+	VARIABLE_NAME = "DUCMASS25"
+	SUBSET = "Saudi"
+	REGION = "world"
+	GET_SUBSET = T
+	NCDF_EXTENSION = ".nc4.nc4"
+}
 
 root <- paste(directory, 'studious-potato/', sep = '')
 
@@ -51,9 +67,9 @@ extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, regio
 			cat('READING NETCDF DATA ===>', '\t', 'year: ', yr, '\t', ' month: ', mnth, '\t', 'day: ', day, '\n')
 
 			if(day > 9){
-				ncname <- paste(data_directory, "MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, day,".SUB.nc", sep='')
+				ncname <- paste(data_directory, "MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, day, NCDF_EXTENSION, sep='')
 			}else{
-				ncname <- paste(data_directory, "MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, "0",day,".SUB.nc", sep='')
+				ncname <- paste(data_directory, "MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, "0",day, NCDF_EXTENSION, sep='')
 			}
 			
 			ncin <- nc_open(ncname)
@@ -67,11 +83,17 @@ extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, regio
 
 			nc_close(ncin)
 
+			MEAN <- mean(log(u_array))
+
 			for(tt in 1:dim(u_array)[3]){
 
 				###########################   GET ONLY DATA OVER SUBSET   ###########################
 
-				Y <- cbind(lon.lat, c(log(u_array[, , tt])))
+				if(area == 'US'){
+					Y <- cbind(lon.lat, c(log(u_array[, , tt])))
+				}else if(area == 'SAUDI'){
+					Y <- cbind(lon.lat, c(log(u_array[, , tt])) - MEAN)
+				}
 				colnames(Y) <- c('lon', 'lat', 'Y1')
 				if(get_subset){
 					subregion <- map(region, subset, fill = TRUE)
@@ -99,13 +121,17 @@ extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, regio
 
 ## Indicate (1) the variable name and (2) the year to which you want to get the data.
 
-VARIABLE_NAME = "DUSMASS25"
+for(YEAR in 2016:2016){
 
-for(YEAR in 2016:2019){
+	data_matrix <- extract_data(yr = YEAR, variable_name = VARIABLE_NAME, get_subset = GET_SUBSET, subset = SUBSET, region = REGION)
 
-	data_matrix <- extract_data(yr = YEAR, variable_name = VARIABLE_NAME)
-
-	write.table(data_matrix[["locations"]], file = paste(root, "Data/sc21/locations_US_", YEAR, sep = ""), sep = ",", row.names = FALSE, col.names = FALSE)
-	write.table(data_matrix[["log_measurements"]], file = paste(root, "Data/sc21/pm_US_", YEAR, sep = ""), sep = ",", row.names = FALSE, col.names = FALSE)
+	if(area == 'US'){
+		write.table(data_matrix[["locations"]], file = paste(root, "Data/sc21/locations_US_", YEAR, sep = ""), sep = ",", row.names = FALSE, col.names = FALSE)
+		write.table(data_matrix[["log_measurements"]], file = paste(root, "Data/sc21/pm_US_", YEAR, sep = ""), sep = ",", row.names = FALSE, col.names = FALSE)
+	}else if(area == 'SAUDI'){
+		write.table(data_matrix[["locations"]], file = paste(root, "Data/sc21/locations_", YEAR, sep = ""), sep = ",", row.names = FALSE, col.names = FALSE)
+		write.table(data_matrix[["log_measurements"]], file = paste(root, "Data/sc21/pm_", YEAR, sep = ""), sep = ",", row.names = FALSE, col.names = FALSE)
+	}
 }
+
 
