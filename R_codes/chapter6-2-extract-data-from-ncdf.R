@@ -5,6 +5,8 @@
 
 directory <- '/home/salvanmo/Desktop/'
 
+data_directory <- '/media/salvanmo/yourlainess/phd/data/sc21/US/'
+
 root <- paste(directory, 'studious-potato/', sep = '')
 
 source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
@@ -49,9 +51,9 @@ extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, regio
 			cat('READING NETCDF DATA ===>', '\t', 'year: ', yr, '\t', ' month: ', mnth, '\t', 'day: ', day, '\n')
 
 			if(day > 9){
-				ncname <- paste("/home/salvanmo/Downloads/MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, day,".SUB.nc", sep='')
+				ncname <- paste(data_directory, "MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, day,".SUB.nc", sep='')
 			}else{
-				ncname <- paste("/home/salvanmo/Downloads/MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, "0",day,".SUB.nc", sep='')
+				ncname <- paste(data_directory, "MERRA2_", merra_ind, ".tavg1_2d_aer_Nx.", yr, mo, "0",day,".SUB.nc", sep='')
 			}
 			
 			ncin <- nc_open(ncname)
