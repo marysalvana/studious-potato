@@ -1,6 +1,8 @@
+// [[Rcpp::depends(RcppEigen)]]
 #include <Rcpp.h>
 #include <boost/math/special_functions/bessel.hpp>
 #include <boost/math/special_functions/gamma.hpp>
+#include <RcppEigen.h>
 //#include <gsl/gsl_sf_bessel.h>
 
 using namespace Rcpp;
@@ -44,13 +46,17 @@ return out ;
 
 // [[Rcpp::export]]
 
-NumericMatrix SPATIALLY_VARYING_PARAMETERS(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat) {
+List SPATIALLY_VARYING_PARAMETERS(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat, int & time) {
+//NumericMatrix SPATIALLY_VARYING_PARAMETERS(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat) {
   
+ Eigen::MatrixXd SIG(2, 2);
   const int m = Loc.nrow(), n_wind = wind.nrow();
   
   float sigma2 = param(0), beta = param(1), nu = param(2);
   
-  NumericMatrix cor(m, m);
+  NumericMatrix cor(m, m), param_matrix(m / time, 5);
+
+  List conso(2);
   
   for (int i = 0; i < m; ++i) {
     for (int j = 0; j <= i; ++j) {
@@ -75,6 +81,15 @@ NumericMatrix SPATIALLY_VARYING_PARAMETERS(NumericMatrix & Loc, NumericVector & 
 	      double omega2 = param_nonstat(0) + param_nonstat(1) * (new_loc2_x - .5) + param_nonstat(2) * (new_loc2_y - .5) + param_nonstat(3) * pow(new_loc2_x - .5, 2) + param_nonstat(4) * pow(new_loc2_y - .5, 2);
 	      double log_lam2_1 = param_nonstat(5) + param_nonstat(6) * (new_loc2_x - .5) + param_nonstat(7) * (new_loc2_y - .5) + param_nonstat(8) * pow(new_loc2_x - .5, 2) + param_nonstat(9) * pow(new_loc2_y - .5, 2);
 	      double log_lam2_2 = param_nonstat(10) + param_nonstat(11) * (new_loc2_x - .5) + param_nonstat(12) * (new_loc2_y - .5) + param_nonstat(13) * pow(new_loc2_x - .5, 2) + param_nonstat(14) * pow(new_loc2_y - .5, 2);
+	
+
+		if(Loc(i, 2) == 0){
+	      		param_matrix(i, 0) = Loc(i, 0);
+	      		param_matrix(i, 1) = Loc(i, 1);
+	      		param_matrix(i, 2) = omega1;
+	      		param_matrix(i, 3) = log_lam1_1;
+	      		param_matrix(i, 4) = log_lam1_2;
+		}
 
 	      double Sigma1_11 = exp(log_lam1_1) * cos(omega1) * cos(omega1) + exp(log_lam1_2) * sin(omega1) * sin(omega1);
 	      double Sigma1_12 = exp(log_lam1_1) * cos(omega1) * sin(omega1) - exp(log_lam1_2) * sin(omega1) * cos(omega1);
@@ -100,17 +115,21 @@ NumericMatrix SPATIALLY_VARYING_PARAMETERS(NumericMatrix & Loc, NumericVector & 
 	      
 	      double dist = sqrt(z2(0) * z2(0) * Inv_ij_11 + z2(0) * z2(1) * Inv_ij_12 + z2(0) * z2(1) * Inv_ij_12 + z2(1) * z2(1) * Inv_ij_22);
 
+		Rprintf("Sigma1_11: %f, Sigma1_12: %f, Sigma1_22: %f, Sigma2_11: %f, Sigma2_12: %f, Sigma2_22: %f, sigma: %f, det_ij: %f, det_i: %f, det_j: %f \n", Sigma1_11, Sigma1_12, Sigma1_22, Sigma2_11, Sigma2_12, Sigma2_22, sigma, det_ij, det_i, det_j);
 	      if (dist == 0) {
 		temp_val = temp_val + sigma2 * pow(sigma, 2);
 	      } else {
 		temp_val = temp_val + sigma2 * pow(sigma, 2) * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu));
 	      }
+	
 	}
 	cor(i, j) = temp_val / n_wind;
       	cor(j, i) = cor(i, j);
     }
   }
-  return cor;
+	conso(0) = cor;
+	conso(1) = param_matrix;
+  return conso;
 }
 
 // [[Rcpp::export]]
@@ -152,6 +171,46 @@ NumericMatrix DEFORMATION(NumericMatrix & Loc, NumericVector & param, NumericMat
 	}
 	cor(i, j) = temp_val / n_wind;
       	cor(j, i) = cor(i, j);
+    }
+  }
+  return cor;
+}
+
+// [[Rcpp::export]]
+
+NumericMatrix POINT_SOURCE_DEFORMATION(NumericMatrix & Loc1, NumericMatrix & Loc2, NumericVector & param, NumericVector & param_nonstat) {
+  
+  const int m = Loc1.nrow(), n = Loc2.nrow();
+  
+  float sigma2 = param(0), beta = param(1), nu = param(2);
+  
+  NumericMatrix cor(m, n);
+  
+  for (int i = 0; i < m; ++i) {
+    for (int j = 0; j < n; ++j) {
+ 
+ 	double temp_val = 0.0;
+
+	      double new_loc1_x = Loc1(i, 0);
+	      double new_loc1_y = Loc1(i, 1);
+	      double new_loc2_x = Loc2(j, 0);
+	      double new_loc2_y = Loc2(j, 1);
+
+		double dist_source1 = sqrt(pow(new_loc1_x - param_nonstat(0), 2) + pow(new_loc1_y - param_nonstat(1), 2)); 
+		double dist_source2 = sqrt(pow(new_loc2_x - param_nonstat(0), 2) + pow(new_loc2_y - param_nonstat(1), 2)); 
+		double deform_loc1_x = param_nonstat(0) + (new_loc1_x - param_nonstat(0)) * dist_source1;
+		double deform_loc1_y = param_nonstat(1) + (new_loc1_y - param_nonstat(1)) * dist_source1;
+		double deform_loc2_x = param_nonstat(0) + (new_loc2_x - param_nonstat(0)) * dist_source2;
+		double deform_loc2_y = param_nonstat(1) + (new_loc2_y - param_nonstat(1)) * dist_source2;
+
+		double dist = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+	      if (dist == 0) {
+		temp_val = temp_val + sigma2;
+	      } else {
+		temp_val = temp_val + sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu));
+	      }
+	cor(i, j) = temp_val;
     }
   }
   return cor;

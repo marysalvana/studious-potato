@@ -198,7 +198,7 @@ data_format <- function(aggregate = 1){
 
 # For saudi dataset only
 
-data_format_testing_only <- function(aggregate = 48){
+data_format_saudi_testing_only <- function(aggregate = 48, forward_time_predict = 1){
 
 	## LOAD HOURLY DATA FROM 2016 TO 2019
 
@@ -267,7 +267,7 @@ data_format_testing_only <- function(aggregate = 48){
 	FINAL_DATA <- list("data_matrix" = res_mat1, "locations" = LOCS)
 
 	N <- dim(FINAL_DATA[["data_matrix"]])[2]
-	TT <- 15
+	TT <- forward_time_predict
 
 	Z <- NULL
 
@@ -474,4 +474,38 @@ data_split <- function(data_list, training_percent = 0.9, temporal_length = NULL
 	cat("Textfiles are saved in ", paste(root, 'Data/sc21/', sep = ''), '\n')
 }
 
+# For US dataset only
+
+data_format_US_testing_only <- function(data_list, temporal_length = NULL, forward_time_predict = 1, file_name){
+
+	cat('SPLITTING THE DATA INTO TRAINING AND TESTING DATASETS', '\n')
+
+	#### CREATE A MATRIX OF MEASUREMENTS AND THEIR CORRESPONDING SPACE-TIME LOCATIONS: (RESIDUALS, LONGITUDE, LATITUDE, TIME) OF DIMENSION (NT) x 4 
+	#### IF TT is very big, you can just get a subset 1:temporal_length
+
+	N <- dim(data_list[["data_matrix"]])[2]
+	if(is.null(temporal_length)){
+		TT <- dim(data_list[["data_matrix"]])[1]
+	}else{
+		TT <- temporal_length
+	}
+
+	Z <- NULL
+
+	for(tt in 1:(TT + forward_time_predict)){
+		Z <- rbind(Z, cbind(data_list[["data_matrix"]][tt, ], data_list[["locations"]], rep(tt, N)))	
+	}
+
+	locs_s_forward <- Z[-(1:(TT * N)), 2:3]                
+	locs_t_forward <- Z[-(1:(TT * N)), 4]              
+	obs_test_forward <- Z[-(1:(TT * N)), 1]
+
+	#### SAVE THE TRAINING AND TESTING DATASETS IN A TXT FILE
+
+	write.table(locs_s_forward, file = paste(root, "Data/sc21/locations_space_testing_NEW", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(locs_t_forward, file = paste(root, "Data/sc21/locations_time_testing_NEW", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+	write.table(obs_test_forward - mean(obs_test_forward), file = paste(root, "Data/sc21/data_st_testing_NEW", file_name, sep = ''), sep = ",", row.names = FALSE, col.names = FALSE)
+
+	cat("Textfiles are saved in ", paste(root, 'Data/sc21/', sep = ''), '\n')
+}
 
