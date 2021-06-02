@@ -117,7 +117,7 @@ mahalanobis_dist <- function(x, SIGS) {
 }
 
 
-data_format <- function(aggregate = 1){
+data_format <- function(aggregate = 1, area){
 
 	## LOAD HOURLY DATA FROM 2016 TO 2019
 
@@ -293,7 +293,7 @@ data_format_saudi_testing_only <- function(aggregate = 48, forward_time_predict 
 
 #Function to check visually if the plot is second-order stationary in its covariance structure
 
-plot_realdata_for_checking_stationarity <- function(data_list, file_name, start_hr = 1, saudi = F){
+plot_realdata_for_checking_stationarity <- function(data_list, file_name, start_hr = 1, saudi = F, aggregate = 'hourly'){
 
 	cat('PLOTTING THE FIRST FIVE SPACETIME IMAGES TO CHECK STATIONARITY', '\n')
 
@@ -363,7 +363,7 @@ plot_realdata_for_manuscript <- function(data_list, file_name, start_hr = 1, sau
 	cat('PLOTTING THE FIRST SIX SPACETIME IMAGES FOR MANUSCRIPT', '\n')
 
 	step_size_for_display <- 4
-	subset_for_display <- seq(start_hr, 6 * step_size_for_display, by = step_size_for_display)
+	subset_for_display <- seq(start_hr, start_hr + 5 * step_size_for_display, by = step_size_for_display)
 
 	zlim_range1 <- range(data_list[["data_matrix"]][subset_for_display, ])
 	zlim_range1 <- c(sign(min(zlim_range1)) * round(abs(min(zlim_range1)), 1) - 0.1, sign(max(zlim_range1)) * round(abs(max(zlim_range1)), 1) + 0.1)
