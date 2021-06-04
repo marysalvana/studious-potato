@@ -115,6 +115,8 @@ cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, 0.1001
 set.seed(1)
 r1 <- rmvn(100, rep(0, n * TT), cov1[["covariance"]], ncores = 25)
 
+write.table(cov1[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+write.table(r1[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-1", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 #####################################################################
 
