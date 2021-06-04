@@ -58,92 +58,23 @@ for(variable in 1:2){
 
 #################################################################################################################
 
-cov_example_1 <- read.table(paste(root, 'Data/univariate-nonstationary/cov-example-1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
-realizations_example_1 <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+AREA <- 'SAUDI'
 
+DATA <- data_format(aggregate = 1, area = AREA)
+locs <- as.matrix(DATA[[2]])
+locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(locs[, 2])) / sd(locs[, 2]))
 
-zlim_range1 <- c(0, 1)
-zlim_range2 <- range(realizations_example_1[1, 1:(n * 5)])
+N <- 30
+n <- N^2
+TT <- 5
+grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
+grid_y <- seq(from = min(locs[, 2]), to = max(locs[, 2]), length.out = N)
+sim_grid_locations <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
-jpeg(file = paste(root, 'Figures/0-scratch-cov1-heatmap.jpg', sep = ''), width = 1200, height = 600)
+Ref_loc <- c(2 * N + 5, ceiling(n / 2) + ceiling(N / 2))
 
-split.screen( rbind(c(0.06,0.94,0.08,0.93), c(0.94,0.98,0.08,0.93)))
-split.screen( figs = c( 3, 6 ), screen = 1 )
+cov_example <- read.table(paste(root, 'Data/univariate-nonstationary/cov-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
-
-hr_count <- 0
-for(tt in 1:5){
-	
-	hr_count <- hr_count + 1
-	
-	screen(3 + hr_count)
-
-	par(pty = 's')
-	par(mai=c(0.2,0.2,0.2,0.2))
-	
-	if(tt == 1){
-	quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], realizations_example_1[1, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n')
-	}else{
-	quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], realizations_example_1[1, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n', yaxt = 'n')
-	}
-	mtext(paste('t = ', tt, sep = ''), side = 3, line = 1, adj = 0.5, cex = 2, font = 2)
-}	
-
-hr_count <- hr_count + 1
-screen(3 + hr_count)
-
-par(pty = 's')
-par(mai=c(0.2,0.2,0.2,0.2))
-
-quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], realizations_example_1[1, 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1)
-points(matrix(sim_grid_locations[reference_locations[1], ], ncol = 2), col = 'black', pch = 4, cex = 3, lwd = 4)
-mtext(paste('Ref Loc 1', sep = ''), side = 2, line = 4, adj = 0.5, cex = 2, font = 2, col = 'blue')
-
-for(tt in 1:5){
-	
-	hr_count <- hr_count + 1
-	
-	screen(3 + hr_count)
-
-	par(pty = 's')
-	par(mai=c(0.2,0.2,0.2,0.2))
-	
-	quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], cov_example_1[1, (tt - 1) * n + 1:n], zlim = zlim_range1, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, yaxt = 'n', xaxt = 'n')
-
-}	
-
-hr_count <- hr_count + 1
-screen(3 + hr_count)
-
-par(pty = 's')
-par(mai=c(0.2,0.2,0.2,0.2))
-
-quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], realizations_example_1[1, 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1)
-points(matrix(sim_grid_locations[reference_locations[2], ], ncol = 2), col = 'black', pch = 4, cex = 3, lwd = 4)
-mtext(paste('Ref Loc 2', sep = ''), side = 2, line = 4, adj = 0.5, cex = 2, font = 2, col = 'blue')
-
-mtext(paste('t = ', 1, sep = ''), side = 2, line = 2, adj = 1.5, cex = 2, font = 2)
-
-for(tt in 1:5){
-	
-	hr_count <- hr_count + 1
-	
-	screen(3 + hr_count)
-
-	par(pty = 's')
-	par(mai=c(0.2,0.2,0.2,0.2))
-	
-	quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], cov_example_1[2, (tt - 1) * n + 1:n], zlim = zlim_range1, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, yaxt = 'n')
-
-}	
-
-screen(2)
-
-x1 <- c(0.025,0.1,0.1,0.025) + 0.1
-y1 <- c(0.17,0.17,0.45,0.45)
-legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(0, 1, length.out = 3), 1), CEX = 1.5)
-
-close.screen( all=TRUE)
-dev.off()
-
+plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-scratch-cov1-heatmap.jpg')
 
