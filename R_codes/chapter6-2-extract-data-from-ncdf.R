@@ -121,7 +121,7 @@ extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, regio
 
 ## Indicate (1) the variable name and (2) the year to which you want to get the data.
 
-for(YEAR in 2016:2016){
+for(YEAR in 2016:2020){
 
 	data_matrix <- extract_data(yr = YEAR, variable_name = VARIABLE_NAME, get_subset = GET_SUBSET, subset = SUBSET, region = REGION)
 
@@ -133,5 +133,8 @@ for(YEAR in 2016:2016){
 		write.table(data_matrix[["log_measurements"]], file = paste(root, "Data/sc21/pm_", YEAR, sep = ""), sep = ",", row.names = FALSE, col.names = FALSE)
 	}
 }
+
+cat(paste("Data is saved in: ", root, "Data/sc21/", sep = ""), '\n')
+
 
 
