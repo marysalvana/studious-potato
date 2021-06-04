@@ -55,3 +55,68 @@ for(variable in 1:2){
 	}
 
 }
+
+#################################################################################################################
+
+cov_example_1 <- read.table(paste(root, 'Data/univariate-nonstationary/cov-example-1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+realizations_example_1 <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+
+
+zlim_range1 <- c(0, 1)
+zlim_range2 <- range(realizations_example_1[1, 1:(n * 5)])
+
+jpeg(file = paste(root, 'Figures/0-scratch-cov1-heatmap.jpg', sep = ''), width = 1200, height = 430)
+
+split.screen( rbind(c(0.06,0.94,0.08,0.93), c(0.94,0.98,0.08,0.93)))
+split.screen( figs = c( 2, 6 ), screen = 1 )
+
+
+hr_count <- 0
+for(tt in 1:5){
+	
+	hr_count <- hr_count + 1
+	
+	screen(3 + hr_count)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,0.2,0.2))
+	
+	if(tt == 1){
+	quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], realizations_example_1[1, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n')
+	}else{
+	quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], realizations_example_1[1, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n', yaxt = 'n')
+	}
+
+}	
+
+hr_count <- hr_count + 1
+screen(3 + hr_count)
+
+par(pty = 's')
+par(mai=c(0.2,0.2,0.2,0.2))
+
+quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], realizations_example_1[1, 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1)
+
+for(tt in 1:5){
+	
+	hr_count <- hr_count + 1
+	
+	screen(3 + hr_count)
+
+	par(pty = 's')
+	par(mai=c(0.2,0.2,0.2,0.2))
+	
+	quilt.plot(sim_grid_locations[, 1], sim_grid_locations[, 2], cov_example_1[1, (tt - 1) * n + 1:n], zlim = zlim_range1, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, yaxt = 'n')
+
+}	
+
+screen(2)
+
+x1 <- c(0.025,0.1,0.1,0.025) + 0.1
+y1 <- c(0.07,0.07,0.35,0.35)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-5, 5, length.out = 3), 1), CEX = 1.5)
+
+close.screen( all=TRUE)
+dev.off()
+
+
