@@ -1,0 +1,31 @@
+#!/bin/bash
+#SBATCH -p batch
+#SBATCH -J “nodes/cores”
+
+#SBATCH --partition=batch
+#SBATCH --time=23:00:00
+#SBATCH -o output/%j.out
+#SBATCH -e output/%j.err
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=40
+#SBATCH --ntasks=1
+#SBATCH --mem=200GB
+#SBATCH -p batch --account=stsda
+##SBATCH --qos=genton-2020-05
+
+echo "Starting at `date`"
+echo "Running on hosts: $SLURM_NODELIST"
+echo "Running on $SLURM_NNODES nodes."
+echo "Running $SLURM_NTASKS tasks."
+echo "Current working directory is `pwd`"
+
+echo "Job ID: $SLURM_ARRAY_TASK_ID."
+
+#module load openmpi/4.0.1/gnu-6.4.0
+module load boost/1.65.1/openmpi-3.0.0-intel-2017
+module load gsl/2.4
+module load R/3.6.0/gnu-6.4.0
+mkdir -p $R_LIBS
+
+Rscript /ibex/scratch/salvanmo/studious-potato/R_codes/chapter2-2-IBEX.R
+
