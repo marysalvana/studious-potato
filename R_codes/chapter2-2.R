@@ -1,19 +1,21 @@
-workstation = T
+workstation = F
 
 if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
 	root <- paste(directory, 'studious-potato/', sep = '')
 	source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
+	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 }else{
 	directory <- '/ibex/scratch/salvanmo/'
 	root <- paste(directory, 'studious-potato/', sep = '')
 	source(file = paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = ''))
+	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp",sep=''))
 }
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 
-sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
+start_time <- Sys.time()
 
 
 
@@ -32,8 +34,18 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 #######################################################################################
 
 
+velocity_mu_config = 2
+velocity_var_config = 2
 
-N <- 20
+mu_k <- c(0, 0.2001)
+var_k <- c(0.0001, 0.01, 1)
+
+WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
+WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
+
+
+
+N <- 50
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
@@ -42,9 +54,6 @@ sim_grid_locations <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
 reference_locations <- c(2 * N + 5, ceiling(n / 2) + ceiling(N / 2))
 
-k <- c(0.0001, 0.01, 1)
-WIND <- WIND_MU <- c(0.1001, 0.1001)
-WIND_VAR <- matrix(k[1] * diag(2), 2, 2)
 
 NN <- 50
 grid_x <- seq(from = -3, to = 3, length.out = NN)
@@ -121,16 +130,17 @@ if(!distributed){
 	cat('Generating realizations...', '\n')
 
 	set.seed(1)
-	r1 <- rmvn(100, rep(0, n * TT), cov1[["covariance"]], ncores = 25)
+	r1 <- rmvn(100, rep(0, n * TT), cov1[["covariance"]], ncores = number_of_cores_to_use)
 
 	cat('Saving the values...', '\n')
 
-	write.table(cov1[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+	write.table(cov1[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1-velocity_mu_config", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 }else{
 
 	cores=detectCores()
-	number_of_cores_to_use = cores[1]-1 # not to overload the computer
+	number_of_cores_to_use = 39
+	#number_of_cores_to_use = cores[1]-1 # not to overload the computer
 
 	cat('Registering', number_of_cores_to_use, 'cores...', '\n')
 
@@ -140,9 +150,15 @@ if(!distributed){
 	number_of_chunks = number_of_cores_to_use
 
 	clusterExport(cl, "root")
-	clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
 	clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
-	clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
+	
+	if(workstation){
+		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
+		clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
+	}else{
+		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = '')))
+		clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
+	}
 
 	clusterExport(cl, c("PARAMETER_NONSTAT", "TT"), envir = environment())
 
@@ -169,18 +185,21 @@ if(!distributed){
 	cat('Generating realizations...', '\n')
 
 	set.seed(1)
-	r1 <- rmvn(100, rep(0, n * TT), cov1, ncores = 25)
+	r1 <- rmvn(100, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
 
 	cat('Saving the values...', '\n')
 
-	write.table(cov1[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+	write.table(cov1[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1-velocity_mu_config", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 }
 
-write.table(r1[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-1", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+write.table(r1[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-1-velocity_mu_config", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+end_time <- Sys.time()
 
 cat('DONE.', '\n')
 cat("Textfiles are saved in ", paste(root, 'Data/univariate-nonstationary/', sep = ''), '\n')
+cat(end_time - start_time, 'seconds', '\n')
 
 
 
