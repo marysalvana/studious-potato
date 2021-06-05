@@ -535,7 +535,7 @@ plot_simulated_data_for_beamer <- function(covariance, realizations, locations, 
 		
 		quilt.plot(locations[, 1], locations[, 2], realizations[1, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n', yaxt = 'n')
 		if(tt == 1){
-			axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 0.8)
+			axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
 		}
 		mtext(paste('t = ', tt, sep = ''), side = 3, line = 1, adj = 0.5, cex = 2, font = 2)
 	}	
@@ -547,7 +547,7 @@ plot_simulated_data_for_beamer <- function(covariance, realizations, locations, 
 	par(mai=c(0.2,0.2,0.2,0.2))
 
 	quilt.plot(locations[, 1], locations[, 2], realizations[1, 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n', yaxt = 'n')
-	axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 0.8)
+	axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
 	points(matrix(locations[reference_locations[1], ], ncol = 2), col = 'black', pch = 4, cex = 3, lwd = 4)
 	mtext(paste('Ref Loc 1', sep = ''), side = 2, line = 4, adj = 0.5, cex = 2, font = 2, col = 'blue')
 
@@ -571,8 +571,8 @@ plot_simulated_data_for_beamer <- function(covariance, realizations, locations, 
 	par(mai=c(0.2,0.2,0.2,0.2))
 
 	quilt.plot(locations[, 1], locations[, 2], realizations[1, 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n', yaxt = 'n')
-	axis(1, at = seq(min(locations[, 1]), max(locations[, 1]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 0.8)
-	axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 0.8)
+	axis(1, at = seq(min(locations[, 1]), max(locations[, 1]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
+	axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
 	points(matrix(locations[reference_locations[2], ], ncol = 2), col = 'black', pch = 4, cex = 3, lwd = 4)
 	mtext(paste('Ref Loc 2', sep = ''), side = 2, line = 4, adj = 0.5, cex = 2, font = 2, col = 'blue')
 
@@ -588,7 +588,7 @@ plot_simulated_data_for_beamer <- function(covariance, realizations, locations, 
 		par(mai=c(0.2,0.2,0.2,0.2))
 		
 		quilt.plot(locations[, 1], locations[, 2], covariance[2, (tt - 1) * n + 1:n], zlim = zlim_range1, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, yaxt = 'n', xaxt = 'n')
-		axis(1, at = seq(min(locations[, 1]), max(locations[, 1]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 0.8)
+		axis(1, at = seq(min(locations[, 1]), max(locations[, 1]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
 
 	}	
 
