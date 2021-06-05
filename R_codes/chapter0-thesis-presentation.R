@@ -87,4 +87,14 @@ realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/re
 
 plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-univariate-nonstationary-cov2-heatmap.jpg')
 
+#------------------------------------------------------------   MOVIE   ------------------------------------------------------------#
+
+###########   SPATIALLY VARYING PARAMETERS MODEL   ###########
+
+cov_example <- read.table(paste(root, 'Data/univariate-nonstationary/cov-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+
+movie_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov1')
+
+
 
