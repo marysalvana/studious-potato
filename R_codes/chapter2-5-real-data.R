@@ -63,7 +63,7 @@ htarg <- htarg[1:nn, (nn + 1):(nn + nrow(locs))]
 sigma <- htarg^2 * log(htarg)
 sigma[htarg == 0] <- 0
 
-Z_rand_sample <- matrix(DATA[[1]][8760 * 3 + 1, ], nrow = 1)
+Z_rand_sample <- matrix(DATA[[1]][8760 * 3 + 1:10, ], nrow = 1)
 
 
 
@@ -96,7 +96,7 @@ NEGLOGLIK_DEFORM <- function(p){
 	return(out)
 }
 
-jWarp = 1:5
+jWarp = 1:15
 init <- c(rep(0, 3), rep(0, 2 * length(jWarp)))
 fit1 <- optim(par = init, fn = NEGLOGLIK_DEFORM, control = list(trace = 5, maxit = 3000)) #
 
@@ -148,9 +148,15 @@ NEGLOGLIK_SPATIALLY_VARYING <- function(p){
 	return(out)
 }
 
-jWarp = 1:10
+jWarp = 1:15
 init <- c(rep(0, 3), rep(0, 3 * length(jWarp)))
-fit1 <- optim(par = init, fn = NEGLOGLIK_SPATIALLY_VARYING, control = list(trace = 5, maxit = 3000)) #
+fit1 <- optim(par = init, fn = NEGLOGLIK_SPATIALLY_VARYING, control = list(trace = 5, maxit = 10000)) #
+
+p <- fit1$par
+len_old <- (length(p) - 3) / 3
+jWarp = 1:15
+new_init <- c(p[1:3], p[3 + 1:len_old], rep(0, max(jWarp) - len_old), p[3 + len_old + 1:len_old], rep(0, max(jWarp) - len_old), p[3 + 2 * len_old + 1:len_old], rep(0, max(jWarp) - len_old))
+fit1 <- optim(par = new_init, fn = NEGLOGLIK_SPATIALLY_VARYING, control = list(trace = 5, maxit = 3000)) #
 
 p <- fit1$par
 theta <- exp(p[1:3])

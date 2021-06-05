@@ -86,6 +86,47 @@ MATERN_UNI_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, LOCATION, T
         return(FINAL_DATA) 
 }
 
+##########################################################################################################################
+
+MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS <- function(PARAMETER, PARAMETER_NONSTAT, PARAMETER_NONSTAT2, LOCATION, TIME, N_SIM = NULL, FITTING = F, PARALLEL = F) {
+
+	n <- nrow(LOCATION)
+
+	LOCATION_NEW <- NULL
+
+        for(tt in 0:(TIME - 1)){
+                LOCATION_NEW <- rbind(LOCATION_NEW, cbind(LOCATION, rep(tt, n)))
+        }
+
+	if(!is.null(N_SIM)){
+		set.seed(1234)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = PARAMETER[7:8], Sigma = matrix(PARAMETER[9:12], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+	}else{
+		WIND_SIMULATED <- matrix(PARAMETER[7:8], ncol = 2, byrow = T)	
+	}
+
+	if(!FITTING & !PARALLEL){
+		SIGMA <- MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+		FINAL_DATA <- list("covariance" = SIGMA[[1]], "parameters" = SIGMA[[2]])
+	}else if(!FITTING & PARALLEL){
+                SIGMA <- MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_PARALLEL(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+                FINAL_DATA <- SIGMA
+        }else if(FITTING & !PARALLEL){
+		SIGMA <- MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+		FINAL_DATA <- list("covariance" = SIGMA[[1]])
+	}else if(FITTING & PARALLEL){
+                SIGMA <- MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+                FINAL_DATA <- SIGMA
+        }
+        return(FINAL_DATA) 
+}
+
+##########################################################################################################################
+
 MATERN_UNI_POINT_SOURCE_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, LOCATION1, LOCATION2) {
 
 	SIGMA <- POINT_SOURCE_DEFORMATION(Loc1 = LOCATION1, Loc2 = LOCATION2, param = PARAMETER[1:3], param_nonstat = PARAMETER_DEFORMATION)

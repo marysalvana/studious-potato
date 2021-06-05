@@ -652,6 +652,9 @@ NumericMatrix MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(Num
 
         		cor12(i, j) = temp_val12 / n_wind;
       			cor21(j, i) = cor12(i, j);
+
+			cor12(j, i) = cor12(i, j);
+      			cor21(i, j) = cor12(j, i);
 		}
 	}
 	return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
