@@ -1,4 +1,4 @@
-workstation = T
+workstation = F
 
 if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
@@ -35,8 +35,8 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 
 #######################################################################################
 
-model = 2
-velocity_mu_config = 2
+model = 1
+velocity_mu_config = 1
 velocity_var_config = 1
 
 
@@ -48,7 +48,7 @@ WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 
 
 
-N <- 20
+N <- 35
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
