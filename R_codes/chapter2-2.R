@@ -35,7 +35,7 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 
 #######################################################################################
 
-model = 1
+model = 2
 velocity_mu_config = 2
 velocity_var_config = 1
 
@@ -48,7 +48,7 @@ WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 
 
 
-N <- 30
+N <- 20
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
@@ -218,13 +218,81 @@ if(model == 1){
 
 	PARAMETER_DEFORMATION <- t(sigma) %*% parWarpsSum
 
-	cov2 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T)
 
-	write.table(cov2[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
-	set.seed(1)
-	r2 <- rmvn(100, rep(0, n * TT), cov2[["covariance"]], ncores = number_of_cores_to_use)
+	#######################################################################################
 
+
+
+	cat('Computing covariances...', '\n')
+
+
+	if(!distributed){
+		cov2 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T)
+
+		cat('Generating realizations...', '\n')
+
+		set.seed(1)
+		r2 <- rmvn(100, rep(0, n * TT), cov2[["covariance"]], ncores = number_of_cores_to_use)
+
+		cat('Saving the values...', '\n')
+
+		write.table(cov2[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+	}else{
+
+		cores=detectCores()
+
+		#number_of_cores_to_use = cores[1]-1 # not to overload the computer
+		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+
+		cl <- makeCluster(number_of_cores_to_use) 
+		registerDoParallel(cl)
+
+		number_of_chunks = number_of_cores_to_use
+
+		clusterExport(cl, "root")
+		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
+		
+		if(workstation){
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
+		}else{
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
+		}
+
+		clusterExport(cl, c("PARAMETER_DEFORMATION", "TT"), envir = environment())
+
+		cat('Simulating wind values...', '\n')
+
+		set.seed(1234)
+		wind_vals <- mvrnorm(100, WIND_MU, WIND_VAR)
+
+		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
+
+		output <- foreach(i=1:nrow(wind_vals), .combine=cbind, .packages = "Rcpp", .noexport = "DEFORMATION_FOR_FITTING_PARALLEL") %dopar% {
+			
+			COVARIANCE <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T, PARALLEL = T)
+
+			return(c(COVARIANCE))
+		}
+
+		stopCluster(cl)
+
+
+
+		cov2 <- matrix(rowSums(output), n * TT, n * TT) / nrow(wind_vals) 
+
+		cat('Generating realizations...', '\n')
+
+		set.seed(1)
+		r2 <- rmvn(100, rep(0, n * TT), cov2, ncores = number_of_cores_to_use)
+
+		cat('Saving the values...', '\n')
+
+		write.table(cov2[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+	}
 
 	write.table(r2[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 

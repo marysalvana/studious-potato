@@ -73,8 +73,18 @@ sim_grid_locations <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
 Ref_loc <- c(2 * N + 5, ceiling(n / 2) + ceiling(N / 2))
 
+###########   SPATIALLY VARYING PARAMETERS MODEL   ###########
+
 cov_example <- read.table(paste(root, 'Data/univariate-nonstationary/cov-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
-plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-scratch-cov1-heatmap.jpg')
+plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-univariate-nonstationary-cov1-heatmap.jpg')
+
+###########    DEFORMATION MODEL   ###########
+
+cov_example <- read.table(paste(root, 'Data/univariate-nonstationary/cov-example-2-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-2-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+
+plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-univariate-nonstationary-cov2-heatmap.jpg')
+
 
