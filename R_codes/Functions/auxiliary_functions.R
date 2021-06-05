@@ -615,7 +615,7 @@ movie_simulated_data_for_beamer <- function(covariance, realizations, locations,
 
 	for(tt in 1:5){
 
-		jpeg(file = paste(root, 'Figures/', file_name, '_t', tt, sep = ''), width = 1000, height = 1000)
+		jpeg(file = paste(root, 'Figures/', file_name, '_t', tt, '.jpg', sep = ''), width = 1000, height = 1000)
 		
 		split.screen( rbind(c(0.05,0.95,0.1,0.95), c(0.90,0.99,0.1,0.95)))
 
