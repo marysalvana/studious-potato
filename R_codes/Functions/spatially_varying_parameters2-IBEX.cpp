@@ -410,47 +410,182 @@ NumericMatrix ORIG_SPATIALLY_VARYING_PARAMETERS(NumericMatrix & Loc, NumericVect
 
 // [[Rcpp::export]]
 
-NumericMatrix DEFORMATION(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat) {
+List DEFORMATION(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat) {
   
-  const int m = Loc.nrow(), n_wind = wind.nrow();
+  	const int m = Loc.nrow(), n_wind = wind.nrow();
+  	float sigma2 = param(0), beta = param(1), nu = param(2);
+  	NumericMatrix cor(m, m), param_matrix(m, 5);
+	List conso(2);
   
-  float sigma2 = param(0), beta = param(1), nu = param(2);
-  
-  NumericMatrix cor(m, m);
-  
-  for (int i = 0; i < m; ++i) {
-    for (int j = 0; j <= i; ++j) {
+  	for (int i = 0; i < m; ++i) {
+    		for (int j = 0; j <= i; ++j) {
  
- 	double temp_val = 0.0;
+ 			double temp_val = 0.0;
 
-    	for (int k = 0; k < n_wind; ++k) {
+    			for (int k = 0; k < n_wind; ++k) {
       
-	      double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
-	      double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
-	      double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
-	      double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
+	      			double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+	      			double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+	      			double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
+	      			double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
 
-		double dist_source1 = sqrt(pow(new_loc1_x - param_nonstat(3), 2) + pow(new_loc1_y - param_nonstat(4), 2)); 
-		double dist_source2 = sqrt(pow(new_loc2_x - param_nonstat(3), 2) + pow(new_loc2_y - param_nonstat(4), 2)); 
-		double deform_loc1_x = param_nonstat(3) + (new_loc1_x - param_nonstat(3)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source1, 2 )));
-		double deform_loc1_y = param_nonstat(4) + (new_loc1_y - param_nonstat(4)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source1, 2 )));
-		double deform_loc2_x = param_nonstat(3) + (new_loc2_x - param_nonstat(3)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
-		double deform_loc2_y = param_nonstat(4) + (new_loc2_y - param_nonstat(4)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
+				double dist_source1 = sqrt(pow(new_loc1_x - param_nonstat(3), 2) + pow(new_loc1_y - param_nonstat(4), 2)); 
+				double dist_source2 = sqrt(pow(new_loc2_x - param_nonstat(3), 2) + pow(new_loc2_y - param_nonstat(4), 2)); 
+				double deform_loc1_x = param_nonstat(3) + (new_loc1_x - param_nonstat(3)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source1, 2 )));
+				double deform_loc1_y = param_nonstat(4) + (new_loc1_y - param_nonstat(4)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source1, 2 )));
+				double deform_loc2_x = param_nonstat(3) + (new_loc2_x - param_nonstat(3)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
+				double deform_loc2_y = param_nonstat(4) + (new_loc2_y - param_nonstat(4)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
 
-		double dist = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+				if(i == j){
+					param_matrix(i, 0) = Loc(i, 0);
+					param_matrix(i, 1) = Loc(i, 1);
+					param_matrix(i, 2) = Loc(i, 2);
+					param_matrix(i, 3) = deform_loc1_x;
+					param_matrix(i, 4) = deform_loc1_y;
+				}
 
-	      if (dist == 0) {
-		temp_val = temp_val + sigma2;
-	      } else {
-		temp_val = temp_val + sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu));
-	      }
-	}
-	cor(i, j) = temp_val / n_wind;
-      	cor(j, i) = cor(i, j);
-    }
-  }
-  return cor;
+				double dist = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+	      			if (dist == 0) {
+					temp_val = temp_val + sigma2;
+	      			}else {
+					temp_val = temp_val + sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu));
+	      			}
+			}
+		cor(i, j) = temp_val / n_wind;
+      		cor(j, i) = cor(i, j);
+    		}
+  	}
+	conso(0) = cor;
+	conso(1) = param_matrix;
+  	return conso;
 }
+
+
+// [[Rcpp::export]]
+
+List DEFORMATION_FOR_FITTING(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat) {
+  
+  	const int m = Loc.nrow(), n_wind = wind.nrow();
+  	float sigma2 = param(0), beta = param(1), nu = param(2);
+  	NumericMatrix cor(m, m);
+	List conso(1);
+  
+  	for (int i = 0; i < m; ++i) {
+    		for (int j = 0; j <= i; ++j) {
+ 
+ 			double temp_val = 0.0;
+
+    			for (int k = 0; k < n_wind; ++k) {
+      
+	      			double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+	      			double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+	      			double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
+	      			double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
+
+				double deform_loc1_x = param_nonstat(i, 0);
+				double deform_loc1_y = param_nonstat(i, 1);
+				double deform_loc2_x = param_nonstat(j, 0);
+				double deform_loc2_y = param_nonstat(j, 1);
+
+				double dist = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+	      			if (dist == 0) {
+					temp_val = temp_val + sigma2;
+	      			}else {
+					temp_val = temp_val + sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu));
+	      			}
+			}
+		cor(i, j) = temp_val / n_wind;
+      		cor(j, i) = cor(i, j);
+    		}
+  	}
+	conso(0) = cor;
+  	return conso;
+}
+
+// [[Rcpp::export]]
+
+NumericMatrix DEFORMATION_PARALLEL(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat) {
+  
+  	const int m = Loc.nrow(), n_wind = wind.nrow();
+  	float sigma2 = param(0), beta = param(1), nu = param(2);
+  	NumericMatrix cor(m, m);
+  
+  	for (int i = 0; i < m; ++i) {
+    		for (int j = 0; j <= i; ++j) {
+ 
+ 			double temp_val = 0.0;
+
+    			for (int k = 0; k < n_wind; ++k) {
+      
+	      			double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+	      			double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+	      			double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
+	      			double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
+
+				double dist_source1 = sqrt(pow(new_loc1_x - param_nonstat(3), 2) + pow(new_loc1_y - param_nonstat(4), 2)); 
+				double dist_source2 = sqrt(pow(new_loc2_x - param_nonstat(3), 2) + pow(new_loc2_y - param_nonstat(4), 2)); 
+				double deform_loc1_x = param_nonstat(3) + (new_loc1_x - param_nonstat(3)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source1, 2 )));
+				double deform_loc1_y = param_nonstat(4) + (new_loc1_y - param_nonstat(4)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source1, 2 )));
+				double deform_loc2_x = param_nonstat(3) + (new_loc2_x - param_nonstat(3)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
+				double deform_loc2_y = param_nonstat(4) + (new_loc2_y - param_nonstat(4)) * ( param_nonstat(0) + param_nonstat(1) * exp(-param_nonstat(2) * pow(dist_source2, 2 )));
+
+				double dist = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+	      			if (dist == 0) {
+					temp_val = temp_val + sigma2;
+	      			}else {
+					temp_val = temp_val + sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu));
+	      			}
+			}
+		cor(i, j) = temp_val / n_wind;
+      		cor(j, i) = cor(i, j);
+    		}
+  	}
+  	return cor;
+}
+
+// [[Rcpp::export]]
+
+NumericMatrix DEFORMATION_FOR_FITTING_PARALLEL(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat) {
+  
+  	const int m = Loc.nrow(), n_wind = wind.nrow();
+  	float sigma2 = param(0), beta = param(1), nu = param(2);
+  	NumericMatrix cor(m, m);
+  
+  	for (int i = 0; i < m; ++i) {
+    		for (int j = 0; j <= i; ++j) {
+ 
+ 			double temp_val = 0.0;
+
+    			for (int k = 0; k < n_wind; ++k) {
+      
+	      			double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+	      			double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+	      			double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
+	      			double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
+
+				double deform_loc1_x = param_nonstat(i, 0);
+				double deform_loc1_y = param_nonstat(i, 1);
+				double deform_loc2_x = param_nonstat(j, 0);
+				double deform_loc2_y = param_nonstat(j, 1);
+
+				double dist = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+	      			if (dist == 0) {
+					temp_val = temp_val + sigma2;
+	      			}else {
+					temp_val = temp_val + sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu));
+	      			}
+			}
+		cor(i, j) = temp_val / n_wind;
+      		cor(j, i) = cor(i, j);
+    		}
+  	}
+  	return cor;
+}
+
 
 // [[Rcpp::export]]
 
