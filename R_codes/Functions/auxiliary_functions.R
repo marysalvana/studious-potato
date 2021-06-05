@@ -647,11 +647,11 @@ movie_simulated_data_for_beamer <- function(realizations, locations, file_name){
 				axis(1, at = seq(min(locations[, 1]), max(locations[, 1]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 2)
 			}
 			if(mod == 1){
-				text(min(locations[, 1]) - 3, 0, mod_labels[4], pos = 4, cex = 3, font = 2, col = 4, xpd = NA)
+				text(min(locations[, 1]) - 2.3, 0, mod_labels[4], pos = 4, cex = 3, font = 2, col = 4, xpd = NA)
 				#mtext(mod_labels[4], side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 4)
 			}
 			if(mod == 4){
-				text(min(locations[, 1]) - 3, 0, mod_labels[5], pos = 4, cex = 3, font = 2, col = 4, xpd = NA)
+				text(min(locations[, 1]) - 2.3, 0, mod_labels[5], pos = 4, cex = 3, font = 2, col = 4, xpd = NA)
 			}
 		}	
 
