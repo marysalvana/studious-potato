@@ -606,7 +606,7 @@ plot_simulated_data_for_beamer <- function(covariance, realizations, locations, 
 }
 
 
-movie_simulated_data_for_beamer <- function(covariance, realizations, locations, file_name){
+movie_simulated_data_for_beamer <- function(realizations, locations, file_name){
 
 	n <- nrow(locations)
 	N <- sqrt(n)
@@ -615,20 +615,32 @@ movie_simulated_data_for_beamer <- function(covariance, realizations, locations,
 
 	for(tt in 1:5){
 
-		jpeg(file = paste(root, 'Figures/', file_name, '_t', tt, '.jpg', sep = ''), width = 1000, height = 1000)
-		
-		split.screen( rbind(c(0.05,0.95,0.1,0.95), c(0.90,0.99,0.1,0.95)))
+		jpeg(file = paste(root, 'Figures/', file_name, sep = ''), width = 1200, height = 900)
 
-		screen(1)
+		split.screen( rbind(c(0.06,0.94,0.08,0.93), c(0.94,0.98,0.08,0.93)))
+		split.screen( figs = c( 2, 3 ), screen = 1 )
 
-		par(pty = 's')
-		par(mai=c(0.5, 0.5, 0.5, 0.5))
-		
-		quilt.plot(locations[, 1], locations[, 2], realizations[1, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2)
-		
-		mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-		mtext(paste('t = ', tt, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-		mtext(expression(s[x]), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+		hr_count <- 0
+
+		for(mod in 1:6){
+			
+			hr_count <- hr_count + 1
+			
+			screen(2 + hr_count)
+
+			par(pty = 's')
+			par(mai=c(0.2,0.2,0.2,0.2))
+			
+			quilt.plot(locations[, 1], locations[, 2], realizations[mod, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n', yaxt = 'n')
+			if(tt == 1){
+				axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
+			}
+			if(mod <= 3){
+				mtext(paste('t = ', tt, sep = ''), side = 3, line = 1, adj = 0.5, cex = 2, font = 2)
+			}
+			mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+			mtext(expression(s[x]), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+		}	
 
 		screen(2)
 
