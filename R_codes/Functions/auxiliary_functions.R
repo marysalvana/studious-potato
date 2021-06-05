@@ -613,11 +613,13 @@ movie_simulated_data_for_beamer <- function(realizations, locations, file_name){
 
 	zlim_range2 <- range(realizations[1, 1:(n * 5)])
 
+	mod_labels <- c("I", "II", "III", "A", "B")
+
 	for(tt in 1:5){
 
-		jpeg(file = paste(root, 'Figures/', file_name, sep = ''), width = 1200, height = 900)
+		jpeg(file = paste(root, 'Figures/', file_name, '_t', tt, '.jpg', sep = ''), width = 1300, height = 900)
 
-		split.screen( rbind(c(0.06,0.94,0.08,0.93), c(0.94,0.98,0.08,0.93)))
+		split.screen( rbind(c(0.1,0.92,0.06,0.93), c(0.92,0.98,0.06,0.93)))
 		split.screen( figs = c( 2, 3 ), screen = 1 )
 
 		hr_count <- 0
@@ -629,23 +631,33 @@ movie_simulated_data_for_beamer <- function(realizations, locations, file_name){
 			screen(2 + hr_count)
 
 			par(pty = 's')
-			par(mai=c(0.2,0.2,0.2,0.2))
+			par(mai=c(0.3,0.3,0.3,0.3))
 			
 			quilt.plot(locations[, 1], locations[, 2], realizations[mod, (tt - 1) * n + 1:n], zlim = zlim_range2, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, xaxt = 'n', yaxt = 'n')
-			if(tt == 1){
-				axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
-			}
 			if(mod <= 3){
 				mtext(paste('t = ', tt, sep = ''), side = 3, line = 1, adj = 0.5, cex = 2, font = 2)
+				mtext(mod_labels[mod], side = 3, line = 4, adj = 0.5, cex = 3, font = 2, col = 4)
 			}
-			mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-			mtext(expression(s[x]), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+			if(mod %in% c(1, 4)){
+				mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+				axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 2)
+			}
+			if(mod >= 4){
+				mtext(expression(s[x]), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+				axis(1, at = seq(min(locations[, 1]), max(locations[, 1]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 2)
+			}
+			if(mod == 1){
+				mtext(mod_labels[4], side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 4)
+			}
+			if(mod == 4){
+				mtext(mod_labels[5], side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 4)
+			}
 		}	
 
 		screen(2)
 
 		x1 <- c(0.01,0.1,0.1,0.01)
-		y1 <- c(0.2,0.2,0.8,0.8)
+		y1 <- c(0.3,0.3,0.7,0.7)
 		legend.gradient2(cbind(x1,y1), title = "", limits = seq(-5, 5, length.out = 5), CEX = 2)
 
 		close.screen( all=TRUE)
