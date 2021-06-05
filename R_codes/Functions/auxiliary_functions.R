@@ -611,7 +611,7 @@ movie_simulated_data_for_beamer <- function(realizations, locations, file_name){
 	n <- nrow(locations)
 	N <- sqrt(n)
 
-	zlim_range2 <- range(realizations[1, 1:(n * 5)])
+	zlim_range2 <- range(realizations[, 1:(n * 5)])
 
 	mod_labels <- c("I", "II", "III", "A", "B")
 
@@ -647,10 +647,11 @@ movie_simulated_data_for_beamer <- function(realizations, locations, file_name){
 				axis(1, at = seq(min(locations[, 1]), max(locations[, 1]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 2)
 			}
 			if(mod == 1){
-				mtext(mod_labels[4], side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 4)
+				text(min(locations[, 1]) - 0.5, 0, mod_labels[4], pos = 4, cex = 3, font = 2, col = 4)
+				#mtext(mod_labels[4], side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 4)
 			}
 			if(mod == 4){
-				mtext(mod_labels[5], side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 4)
+				text(min(locations[, 1]) - 0.5, 0, mod_labels[5], pos = 4, cex = 3, font = 2, col = 4)
 			}
 		}	
 
