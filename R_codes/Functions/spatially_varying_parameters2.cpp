@@ -522,7 +522,8 @@ NumericMatrix MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(Num
 	NumericMatrix cor11(m, m), cor22(m, m), cor12(m, m), cor21(m, m);
 
 	for (int i = 0; i < m; ++i) {
-    		for (int j = 0; j <= i; ++j) {
+    		for (int j = 0; j <m; ++j) {
+    		//for (int j = 0; j <= i; ++j) {
 
         		double temp_val11 = 0.0, temp_val22 = 0.0, temp_val12 = 0.0;
 
@@ -645,16 +646,16 @@ NumericMatrix MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(Num
 
         		}
         		cor11(i, j) = temp_val11 / n_wind;
-        		cor11(j, i) = cor11(i, j);
+        		//cor11(j, i) = cor11(i, j);
 
         		cor22(i, j) = temp_val22 / n_wind;
-        		cor22(j, i) = cor22(i, j);
+        		//cor22(j, i) = cor22(i, j);
 
         		cor12(i, j) = temp_val12 / n_wind;
       			cor21(j, i) = cor12(i, j);
 
-			cor12(j, i) = cor12(i, j);
-      			cor21(i, j) = cor12(j, i);
+			//cor12(j, i) = cor12(i, j);
+      			//cor21(i, j) = cor12(j, i);
 		}
 	}
 	return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));

@@ -42,7 +42,7 @@ velocity_var_config = 1
 rho_config = 3
 
 
-mu_k <- c(0, 0.2001)
+mu_k <- c(0, 0.3001)
 var_k <- c(0.001, 0.1, 1)
 
 WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
@@ -105,7 +105,9 @@ if(model == 1){
 	#p <- fit1$par
 	#p <- c(0.0093092093, 0.0149825632, 0.0182713056, -0.0096880506, 0.0021445396, -0.0160542132, -0.0061874637, 0.0043052011, 0.0268706150, -0.0699589454, 0.0101119343, 0.0264518611, 0.0245503625, 0.0076773012, -0.0016969535, 0.0099870058, -0.0210626524, -0.0009397276, -0.0097587524, 0.0122824133, 0.0105428080, -0.0627256549, -0.0065139657, 0.0124965931, 0.0097002523, -0.0039516145, 0.0145425766, 0.0372800506, 0.0221969349, -0.0242916859, 0.0056526464, 0.0312454629, -0.0022965453)
 	
-	p <- c(0.0071644151, 0.0094228436, -0.0094357164, 0.0011911244, -0.0001946439, 0.0044519415, -0.0029900530, 0.0024820814, -0.0077504082, 0.0037965748, -0.0691636929, 0.0016734147, 0.0056327376, 0.0014253809, -0.0057678577, -0.0030793794, 0.0087365585, 0.0058047295, 0.0040945055, -0.0041464973, 0.0366414100, 0.0088822294, 0.0167993236, 0.0064401123, 0.0090248538, 0.0084194860, 0.0063182756, 0.0122171447, 0.0069259888, 0.0068051953, -0.0066732051, 0.0201189423, 0.0066393622)
+	#p <- c(0.0071644151, 0.0094228436, -0.0094357164, 0.0011911244, -0.0001946439, 0.0044519415, -0.0029900530, 0.0024820814, -0.0077504082, 0.0037965748, -0.0691636929, 0.0016734147, 0.0056327376, 0.0014253809, -0.0057678577, -0.0030793794, 0.0087365585, 0.0058047295, 0.0040945055, -0.0041464973, 0.0366414100, 0.0088822294, 0.0167993236, 0.0064401123, 0.0090248538, 0.0084194860, 0.0063182756, 0.0122171447, 0.0069259888, 0.0068051953, -0.0066732051, 0.0201189423, 0.0066393622)
+
+	p <- c(-9.165018e-04, -1.438297e-02, 2.857364e-02, -3.212699e-03, 2.322377e-02, 6.520037e-03, -9.153075e-03, 1.182332e-03, -2.496006e-02, -6.854694e-05, -9.836716e-03, -1.947022e-02, 2.343203e-03, 2.126581e-03, -9.996413e-04, 3.247334e-03, -3.790232e-04, 9.897261e-04, -7.298651e-03, -6.667151e-03, 3.357161e-02, 1.500055e-02, 2.056987e-02, 1.065834e-02, 1.019952e-02, 9.970096e-03, 1.081856e-02, 1.209043e-02, 9.716391e-03, 1.776701e-03, 9.011357e-04, -5.024265e-03, -4.672615e-03)
 
 	jWarp = 1:10
 	theta <- exp(p[1:3])
@@ -309,6 +311,8 @@ if(model == 1){
 
 	cat('Computing covariances...', '\n')
 
+	PARAMETER_NONSTAT2 <- matrix(0, ncol = ncol(PARAMETER_NONSTAT), nrow = nrow(PARAMETER_NONSTAT))
+
 
         if(!distributed){
 
@@ -320,7 +324,7 @@ if(model == 1){
 		#cov3_theo <- rbind(cbind(cov3_uni11[['covariance']], cov3_uni12[['covariance']]), cbind(t(cov3_uni12[['covariance']]), cov3_uni22[['covariance']]))
 		#r3 <- rmvn(100, rep(0, n * TT * 2), cov3_theo, ncores = number_of_cores_to_use)
 
-		cov3 <- MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 1, 0.23, 0.5, 1, VARIABLE_RHO, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, PARAMETER_NONSTAT2 = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
+		cov3 <- MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 1, 0.23, 0.5, 1, VARIABLE_RHO, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, PARAMETER_NONSTAT2 = PARAMETER_NONSTAT2, FITTING = T, PARALLEL = T)
 
 		set.seed(1)
 		r3 <- rmvn(100, rep(0, n * TT * 2), cov3, ncores = number_of_cores_to_use)
@@ -396,6 +400,8 @@ if(model == 1){
 		write.table(cov3[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-3-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_rho_config_", rho_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 	}
 	write.table(r3[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-3-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_rho_config_", rho_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+}else if(model == 4){
 
 }
 
