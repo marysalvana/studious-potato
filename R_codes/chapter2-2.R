@@ -1,15 +1,17 @@
-workstation = F
+workstation = T
 
 if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
 	root <- paste(directory, 'studious-potato/', sep = '')
 	source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
 	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
+	number_of_cores_to_use = 24
 }else{
 	directory <- '/ibex/scratch/salvanmo/'
 	root <- paste(directory, 'studious-potato/', sep = '')
 	source(file = paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = ''))
 	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp",sep=''))
+	number_of_cores_to_use = 39
 }
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
@@ -33,19 +35,20 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 
 #######################################################################################
 
-
+model = 1
 velocity_mu_config = 2
-velocity_var_config = 2
+velocity_var_config = 1
+
 
 mu_k <- c(0, 0.2001)
-var_k <- c(0.0001, 0.01, 1)
+var_k <- c(0.001, 0.1, 1)
 
 WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
 WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 
 
 
-N <- 50
+N <- 30
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
@@ -93,120 +96,143 @@ sigma <- htarg^2 * log(htarg)
 sigma[htarg == 0] <- 0
 
 
-#p <- fit1$par
-p <- c(0.0093092093, 0.0149825632, 0.0182713056, -0.0096880506, 0.0021445396, -0.0160542132, -0.0061874637, 0.0043052011, 0.0268706150, -0.0699589454, 0.0101119343, 0.0264518611, 0.0245503625, 0.0076773012, -0.0016969535, 0.0099870058, -0.0210626524, -0.0009397276, -0.0097587524, 0.0122824133, 0.0105428080, -0.0627256549, -0.0065139657, 0.0124965931, 0.0097002523, -0.0039516145, 0.0145425766, 0.0372800506, 0.0221969349, -0.0242916859, 0.0056526464, 0.0312454629, -0.0022965453)
+if(model == 1){
 
-jWarp = 1:10
-theta <- exp(p[1:3])
+	#p <- fit1$par
+	p <- c(0.0093092093, 0.0149825632, 0.0182713056, -0.0096880506, 0.0021445396, -0.0160542132, -0.0061874637, 0.0043052011, 0.0268706150, -0.0699589454, 0.0101119343, 0.0264518611, 0.0245503625, 0.0076773012, -0.0016969535, 0.0099870058, -0.0210626524, -0.0009397276, -0.0097587524, 0.0122824133, 0.0105428080, -0.0627256549, -0.0065139657, 0.0124965931, 0.0097002523, -0.0039516145, 0.0145425766, 0.0372800506, 0.0221969349, -0.0242916859, 0.0056526464, 0.0312454629, -0.0022965453)
 
-beta1 <- p[3 + 1:length(jWarp)]
-beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
-beta3 <- p[3 + 2 * length(jWarp) + 1:length(jWarp)]
+	jWarp = 1:10
+	theta <- exp(p[1:3])
 
-parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta3, ncol=length(beta3), nrow=nrow(X), byrow=T)),
-	       rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
-		rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+	beta1 <- p[3 + 1:length(jWarp)]
+	beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
+	beta3 <- p[3 + 2 * length(jWarp) + 1:length(jWarp)]
 
-PARAMETER_NONSTAT <- t(sigma) %*% parWarpsSum
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta3, ncol=length(beta3), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+			rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
 
-#ind <- 72 #40, 54 #3, 4, 6, 8, 9, 14, 16
-#set.seed(ind)
-#PARAMETER_NONSTAT <- runif(12, -1, 1)
-#PARAMETER_NONSTAT <- c(0, PARAMETER_NONSTAT[1:4], 0, PARAMETER_NONSTAT[5:8], 0, PARAMETER_NONSTAT[9:12])
-#PARAMETER_NONSTAT <- runif(15, -1, 1)
+	PARAMETER_NONSTAT <- t(sigma) %*% parWarpsSum
 
-
-
-#######################################################################################
+	#ind <- 72 #40, 54 #3, 4, 6, 8, 9, 14, 16
+	#set.seed(ind)
+	#PARAMETER_NONSTAT <- runif(12, -1, 1)
+	#PARAMETER_NONSTAT <- c(0, PARAMETER_NONSTAT[1:4], 0, PARAMETER_NONSTAT[5:8], 0, PARAMETER_NONSTAT[9:12])
+	#PARAMETER_NONSTAT <- runif(15, -1, 1)
 
 
 
-cat('Computing covariances...', '\n')
+	#######################################################################################
 
-if(!distributed){
 
-	cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T)
 
-	cat('Generating realizations...', '\n')
+	cat('Computing covariances...', '\n')
 
-	set.seed(1)
-	r1 <- rmvn(100, rep(0, n * TT), cov1[["covariance"]], ncores = number_of_cores_to_use)
+	if(!distributed){
 
-	cat('Saving the values...', '\n')
+		cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T)
 
-	write.table(cov1[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1-velocity_mu_config", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+		cat('Generating realizations...', '\n')
 
-}else{
+		set.seed(1)
+		r1 <- rmvn(100, rep(0, n * TT), cov1[["covariance"]], ncores = number_of_cores_to_use)
 
-	cores=detectCores()
-	number_of_cores_to_use = 39
-	#number_of_cores_to_use = cores[1]-1 # not to overload the computer
+		cat('Saving the values...', '\n')
 
-	cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+		write.table(cov1[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
-	cl <- makeCluster(number_of_cores_to_use) 
-	registerDoParallel(cl)
-
-	number_of_chunks = number_of_cores_to_use
-
-	clusterExport(cl, "root")
-	clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
-	
-	if(workstation){
-		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
-		clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
 	}else{
-		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = '')))
-		clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
-	}
 
-	clusterExport(cl, c("PARAMETER_NONSTAT", "TT"), envir = environment())
+		cores=detectCores()
 
-	cat('Simulating wind values...', '\n')
+		#number_of_cores_to_use = cores[1]-1 # not to overload the computer
+		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
 
-	set.seed(1234)
-	wind_vals <- mvrnorm(100, WIND_MU, WIND_VAR)
+		cl <- makeCluster(number_of_cores_to_use) 
+		registerDoParallel(cl)
 
-	cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
+		number_of_chunks = number_of_cores_to_use
 
-	output <- foreach(i=1:nrow(wind_vals), .combine=cbind, .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
+		clusterExport(cl, "root")
+		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
 		
-		COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
+		if(workstation){
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
+		}else{
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
+		}
 
-		return(c(COVARIANCE))
+		clusterExport(cl, c("PARAMETER_NONSTAT", "TT"), envir = environment())
+
+		cat('Simulating wind values...', '\n')
+
+		set.seed(1234)
+		wind_vals <- mvrnorm(100, WIND_MU, WIND_VAR)
+
+		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
+
+		output <- foreach(i=1:nrow(wind_vals), .combine=cbind, .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
+			
+			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
+
+			return(c(COVARIANCE))
+		}
+
+		stopCluster(cl)
+
+
+
+		cov1 <- matrix(rowSums(output), n * TT, n * TT) / nrow(wind_vals) 
+
+		cat('Generating realizations...', '\n')
+
+		set.seed(1)
+		r1 <- rmvn(100, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
+
+		cat('Saving the values...', '\n')
+
+		write.table(cov1[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
 	}
 
-	stopCluster(cl)
+	write.table(r1[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
+}else if(model == 2){
 
+	#set.seed(3)
+	#PARAMETER_DEFORMATION <- c(runif(2, -8, 8), runif(1, 0, 8), runif(2, -1, 1))
 
-	cov1 <- matrix(rowSums(output), n * TT, n * TT) / nrow(wind_vals) 
+	#p <- fit1$par
+	p <- c(0.0093092093, 0.0149825632, 0.0182713056, -0.0096880506, 0.0021445396, -0.0160542132, -0.0061874637, 0.0043052011, 0.0268706150, -0.0699589454, 0.0101119343, 0.0264518611, 0.0245503625, 0.0076773012, -0.0016969535, 0.0099870058, -0.0210626524, -0.0009397276, -0.0097587524, 0.0122824133, 0.0105428080, -0.0627256549, -0.0065139657, 0.0124965931, 0.0097002523, -0.0039516145, 0.0145425766, 0.0372800506,  0.0221969349, -0.0242916859, 0.0056526464, 0.0312454629, -0.0022965453)
 
-	cat('Generating realizations...', '\n')
+	jWarp = 1:15
+	theta <- exp(p[1:3])
+
+	beta1 <- p[3 + 1:length(jWarp)]
+	beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
+
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+	PARAMETER_DEFORMATION <- t(sigma) %*% parWarpsSum
+
+	cov2 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T)
+
+	write.table(cov2[["covariance"]][reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 	set.seed(1)
-	r1 <- rmvn(100, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
+	r2 <- rmvn(100, rep(0, n * TT), cov2[["covariance"]], ncores = number_of_cores_to_use)
 
-	cat('Saving the values...', '\n')
 
-	write.table(cov1[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-1-velocity_mu_config", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+	write.table(r2[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 }
-
-write.table(r1[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-1-velocity_mu_config", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 end_time <- Sys.time()
 
 cat('DONE.', '\n')
 cat("Textfiles are saved in ", paste(root, 'Data/univariate-nonstationary/', sep = ''), '\n')
 cat(end_time - start_time, 'seconds', '\n')
-
-
-
-#######################################################################################
-
-set.seed(3)
-PARAMETER_DEFORMATION <- c(runif(2, -8, 8), runif(1, 0, 8), runif(2, -1, 1))
-
-#cov2 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION)
 
