@@ -88,7 +88,7 @@ htarg <- htarg[1:nn, (nn + 1):(nn + nrow(locs))]
 sigma <- htarg^2 * log(htarg)
 sigma[htarg == 0] <- 0
 
-Z_rand_sample <- matrix(DATA[[1]][1, ], nrow = 1)
+Z_rand_sample <- matrix(DATA[[1]][8760 * 3 + 1, ], nrow = 1)
 
 NEGLOGLIK_DEFORM <- function(p){
 
@@ -115,7 +115,7 @@ NEGLOGLIK_DEFORM <- function(p){
 	return(out)
 }
 
-jWarp = 1:30
+jWarp = 1:5
 init <- c(rep(0, 3), rep(0, 2 * length(jWarp)))
 fit1 <- optim(par = init, fn = NEGLOGLIK_DEFORM, control = list(trace = 5, maxit = 3000)) #
 
