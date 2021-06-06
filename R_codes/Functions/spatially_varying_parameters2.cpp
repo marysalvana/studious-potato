@@ -514,6 +514,158 @@ NumericMatrix DEFORMATION_FOR_FITTING_PARALLEL(NumericMatrix & Loc, NumericVecto
 
 // [[Rcpp::export]]
 
+List MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericMatrix & param_nonstat, NumericMatrix & param_nonstat2, int & time) {
+
+  	const int m = Loc.nrow(), n_wind = wind.nrow();
+  	float sigma2_1 = param(0), sigma2_2 = param(1), beta = param(2), nu1 = param(3), nu2 = param(4), rho = param(5);
+	float nu12 = 0.5 * (nu1 + nu2);
+	NumericMatrix cor11(m, m), cor22(m, m), cor12(m, m), cor21(m, m);
+	List conso(1);
+
+	for (int i = 0; i < m; ++i) {
+    		for (int j = 0; j <m; ++j) {
+    		//for (int j = 0; j <= i; ++j) {
+
+        		double temp_val11 = 0.0, temp_val22 = 0.0, temp_val12 = 0.0;
+
+        		for (int k = 0; k < n_wind; ++k) {
+
+			      	double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+			      	double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+			      	double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
+			      	double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
+
+			      	double x1 = new_loc1_x - new_loc2_x;
+			      	double x2 = new_loc1_y - new_loc2_y;
+			      	NumericVector z2 = {x1, x2};
+
+			      	double omega1 = param_nonstat(i, 0);
+			      	double log_lam1_1 = param_nonstat(i, 1);
+			      	double log_lam1_2 = param_nonstat(i, 2);
+
+			      	double omega2 = param_nonstat(j, 0);
+			      	double log_lam2_1 = param_nonstat(j, 1);
+			      	double log_lam2_2 = param_nonstat(j, 2);
+
+				double Sigma1_11 = exp(log_lam1_1) * cos(omega1) * cos(omega1) + exp(log_lam1_2) * sin(omega1) * sin(omega1);
+				double Sigma1_12 = exp(log_lam1_1) * cos(omega1) * sin(omega1) - exp(log_lam1_2) * sin(omega1) * cos(omega1);
+				double Sigma1_22 = exp(log_lam1_1) * sin(omega1) * sin(omega1) + exp(log_lam1_2) * cos(omega1) * cos(omega1);
+
+				double Sigma2_11 = exp(log_lam2_1) * cos(omega2) * cos(omega2) + exp(log_lam2_2) * sin(omega2) * sin(omega2);
+				double Sigma2_12 = exp(log_lam2_1) * cos(omega2) * sin(omega2) - exp(log_lam2_2) * sin(omega2) * cos(omega2);
+				double Sigma2_22 = exp(log_lam2_1) * sin(omega2) * sin(omega2) + exp(log_lam2_2) * cos(omega2) * cos(omega2);
+
+				double det_i = Sigma1_11 * Sigma1_22 - Sigma1_12 * Sigma1_12;
+				double det_j = Sigma2_11 * Sigma2_22 - Sigma2_12 * Sigma2_12;
+
+				double Kernel_ij_11 = 0.5 * (Sigma1_11 + Sigma2_11);
+				double Kernel_ij_12 = 0.5 * (Sigma1_12 + Sigma2_12);
+				double Kernel_ij_22 = 0.5 * (Sigma1_22 + Sigma2_22);
+
+				double Inv_ij_11 = Kernel_ij_22;
+				double Inv_ij_22 = Kernel_ij_11;
+				double Inv_ij_12 = - Kernel_ij_12;
+				double det_ij = Kernel_ij_11 * Kernel_ij_22 - Kernel_ij_12 * Kernel_ij_12;
+
+				double sigma11 = sqrt(sqrt(det_i * det_j)/det_ij);
+
+				double dist11 = sqrt(z2(0) * z2(0) * Inv_ij_11 + z2(0) * z2(1) * Inv_ij_12 + z2(0) * z2(1) * Inv_ij_12 + z2(1) * z2(1) * Inv_ij_22);
+
+			      	omega1 = param_nonstat2(i, 0);
+			      	log_lam1_1 = param_nonstat2(i, 1);
+			      	log_lam1_2 = param_nonstat2(i, 2);
+
+			      	omega2 = param_nonstat2(j, 0);
+			      	log_lam2_1 = param_nonstat2(j, 1);
+			      	log_lam2_2 = param_nonstat2(j, 2);
+
+				Sigma1_11 = exp(log_lam1_1) * cos(omega1) * cos(omega1) + exp(log_lam1_2) * sin(omega1) * sin(omega1);
+				Sigma1_12 = exp(log_lam1_1) * cos(omega1) * sin(omega1) - exp(log_lam1_2) * sin(omega1) * cos(omega1);
+				Sigma1_22 = exp(log_lam1_1) * sin(omega1) * sin(omega1) + exp(log_lam1_2) * cos(omega1) * cos(omega1);
+
+				Sigma2_11 = exp(log_lam2_1) * cos(omega2) * cos(omega2) + exp(log_lam2_2) * sin(omega2) * sin(omega2);
+				Sigma2_12 = exp(log_lam2_1) * cos(omega2) * sin(omega2) - exp(log_lam2_2) * sin(omega2) * cos(omega2);
+				Sigma2_22 = exp(log_lam2_1) * sin(omega2) * sin(omega2) + exp(log_lam2_2) * cos(omega2) * cos(omega2);
+
+				det_i = Sigma1_11 * Sigma1_22 - Sigma1_12 * Sigma1_12;
+				det_j = Sigma2_11 * Sigma2_22 - Sigma2_12 * Sigma2_12;
+
+				Kernel_ij_11 = 0.5 * (Sigma1_11 + Sigma2_11);
+				Kernel_ij_12 = 0.5 * (Sigma1_12 + Sigma2_12);
+				Kernel_ij_22 = 0.5 * (Sigma1_22 + Sigma2_22);
+
+				Inv_ij_11 = Kernel_ij_22;
+				Inv_ij_22 = Kernel_ij_11;
+				Inv_ij_12 = - Kernel_ij_12;
+				det_ij = Kernel_ij_11 * Kernel_ij_22 - Kernel_ij_12 * Kernel_ij_12;
+
+				double sigma22 = sqrt(sqrt(det_i * det_j)/det_ij);
+
+				double dist22 = sqrt(z2(0) * z2(0) * Inv_ij_11 + z2(0) * z2(1) * Inv_ij_12 + z2(0) * z2(1) * Inv_ij_12 + z2(1) * z2(1) * Inv_ij_22);
+
+			      	omega1 = param_nonstat(i, 0);
+			      	log_lam1_1 = param_nonstat(i, 1);
+			      	log_lam1_2 = param_nonstat(i, 2);
+
+			      	omega2 = param_nonstat2(j, 0);
+			      	log_lam2_1 = param_nonstat2(j, 1);
+			      	log_lam2_2 = param_nonstat2(j, 2);
+
+				Sigma1_11 = exp(log_lam1_1) * cos(omega1) * cos(omega1) + exp(log_lam1_2) * sin(omega1) * sin(omega1);
+				Sigma1_12 = exp(log_lam1_1) * cos(omega1) * sin(omega1) - exp(log_lam1_2) * sin(omega1) * cos(omega1);
+				Sigma1_22 = exp(log_lam1_1) * sin(omega1) * sin(omega1) + exp(log_lam1_2) * cos(omega1) * cos(omega1);
+
+				Sigma2_11 = exp(log_lam2_1) * cos(omega2) * cos(omega2) + exp(log_lam2_2) * sin(omega2) * sin(omega2);
+				Sigma2_12 = exp(log_lam2_1) * cos(omega2) * sin(omega2) - exp(log_lam2_2) * sin(omega2) * cos(omega2);
+				Sigma2_22 = exp(log_lam2_1) * sin(omega2) * sin(omega2) + exp(log_lam2_2) * cos(omega2) * cos(omega2);
+
+				det_i = Sigma1_11 * Sigma1_22 - Sigma1_12 * Sigma1_12;
+				det_j = Sigma2_11 * Sigma2_22 - Sigma2_12 * Sigma2_12;
+
+				Kernel_ij_11 = 0.5 * (Sigma1_11 + Sigma2_11);
+				Kernel_ij_12 = 0.5 * (Sigma1_12 + Sigma2_12);
+				Kernel_ij_22 = 0.5 * (Sigma1_22 + Sigma2_22);
+
+				Inv_ij_11 = Kernel_ij_22;
+				Inv_ij_22 = Kernel_ij_11;
+				Inv_ij_12 = - Kernel_ij_12;
+				det_ij = Kernel_ij_11 * Kernel_ij_22 - Kernel_ij_12 * Kernel_ij_12;
+
+				double sigma12 = sqrt(sqrt(det_i * det_j)/det_ij);
+
+				double dist12 = sqrt(z2(0) * z2(0) * Inv_ij_11 + z2(0) * z2(1) * Inv_ij_12 + z2(0) * z2(1) * Inv_ij_12 + z2(1) * z2(1) * Inv_ij_22);
+
+				if (dist11 == 0) {
+					temp_val11 = temp_val11 + sigma2_1 * pow(sigma11, 2);
+					temp_val22 = temp_val22 + sigma2_2 * pow(sigma22, 2);
+					temp_val12 = temp_val12 + rho * sqrt(sigma2_1 * sigma2_2) * pow(sigma12, 2);
+				}else {
+					temp_val11 = temp_val11 + sigma2_1 * pow(sigma11, 2) * pow(dist11, nu1) * cyl_bessel_k(nu1, dist11) / (pow(2, nu1 - 1) * tgamma(nu1));
+					temp_val22 = temp_val22 + sigma2_2 * pow(sigma22, 2) * pow(dist22, nu2) * cyl_bessel_k(nu2, dist22) / (pow(2, nu2 - 1) * tgamma(nu2));
+					temp_val12 = temp_val12 + rho * sqrt(sigma2_1 * sigma2_2) * pow(sigma12, 2) * pow(dist12, nu12) * cyl_bessel_k(nu12, dist12) / (pow(2, nu12 - 1) * tgamma(nu12));
+				}
+
+        		}
+        		cor11(i, j) = temp_val11 / n_wind;
+        		//cor11(j, i) = cor11(i, j);
+
+        		cor22(i, j) = temp_val22 / n_wind;
+        		//cor22(j, i) = cor22(i, j);
+
+        		cor12(i, j) = temp_val12 / n_wind;
+      			cor21(j, i) = cor12(i, j);
+
+			//cor12(j, i) = cor12(i, j);
+      			//cor21(i, j) = cor12(j, i);
+		}
+	}
+	//return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
+	conso(0) = rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
+  	return conso;
+}
+
+// [[Rcpp::export]]
+
 NumericMatrix MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericMatrix & param_nonstat, NumericMatrix & param_nonstat2, int & time) {
 
   	const int m = Loc.nrow(), n_wind = wind.nrow();
@@ -658,6 +810,75 @@ NumericMatrix MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(Num
       			//cor21(i, j) = cor12(j, i);
 		}
 	}
+	return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
+}
+
+// [[Rcpp::export]]
+
+NumericMatrix MULTIVARIATE_DEFORMATION_FOR_FITTING_PARALLEL(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat, NumericVector & param_nonstat2) {
+  
+  	const int m = Loc.nrow(), n_wind = wind.nrow();
+  	float sigma2_1 = param(0), sigma2_2 = param(1), beta = param(2), nu1 = param(3), nu2 = param(4), rho = param(5);
+	float nu12 = 0.5 * (nu1 + nu2);
+	NumericMatrix cor11(m, m), cor22(m, m), cor12(m, m), cor21(m, m);
+  
+  	for (int i = 0; i < m; ++i) {
+    		for (int j = 0; j <= i; ++j) {
+ 
+        		double temp_val11 = 0.0, temp_val22 = 0.0, temp_val12 = 0.0;
+
+    			for (int k = 0; k < n_wind; ++k) {
+      
+	      			double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+	      			double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+	      			double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
+	      			double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
+
+				double deform_loc1_x = new_loc1_x + param_nonstat(i, 0);
+				double deform_loc1_y = new_loc1_y + param_nonstat(i, 1);
+				double deform_loc2_x = new_loc2_x + param_nonstat(j, 0);
+				double deform_loc2_y = new_loc2_y + param_nonstat(j, 1);
+
+				double dist11 = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+				deform_loc1_x = new_loc1_x + param_nonstat2(i, 0);
+				deform_loc1_y = new_loc1_y + param_nonstat2(i, 1);
+				deform_loc2_x = new_loc2_x + param_nonstat2(j, 0);
+				deform_loc2_y = new_loc2_y + param_nonstat2(j, 1);
+
+				double dist22 = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+				deform_loc1_x = new_loc1_x + param_nonstat(i, 0);
+				deform_loc1_y = new_loc1_y + param_nonstat(i, 1);
+				deform_loc2_x = new_loc2_x + param_nonstat2(j, 0);
+				deform_loc2_y = new_loc2_y + param_nonstat2(j, 1);
+
+				double dist12 = sqrt(pow(deform_loc2_x - deform_loc1_x, 2) + pow(deform_loc2_y - deform_loc1_y, 2));
+
+				if (dist11 == 0) {
+					temp_val11 = temp_val11 + sigma2_1;
+					temp_val22 = temp_val22 + sigma2_2;
+					temp_val12 = temp_val12 + rho * sqrt(sigma2_1 * sigma2_2);
+				}else {
+					temp_val11 = temp_val11 + sigma2_1 * pow(dist11, nu1) * cyl_bessel_k(nu1, dist11) / (pow(2, nu1 - 1) * tgamma(nu1));
+					temp_val22 = temp_val22 + sigma2_2 * pow(dist22, nu2) * cyl_bessel_k(nu2, dist22) / (pow(2, nu2 - 1) * tgamma(nu2));
+					temp_val12 = temp_val12 + rho * sqrt(sigma2_1 * sigma2_2) * pow(dist12, nu12) * cyl_bessel_k(nu12, dist12) / (pow(2, nu12 - 1) * tgamma(nu12));
+				}
+
+			}
+        		cor11(i, j) = temp_val11 / n_wind;
+        		//cor11(j, i) = cor11(i, j);
+
+        		cor22(i, j) = temp_val22 / n_wind;
+        		//cor22(j, i) = cor22(i, j);
+
+        		cor12(i, j) = temp_val12 / n_wind;
+      			cor21(j, i) = cor12(i, j);
+
+			//cor12(j, i) = cor12(i, j);
+      			//cor21(i, j) = cor12(j, i);
+    		}
+  	}
 	return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
 }
 		

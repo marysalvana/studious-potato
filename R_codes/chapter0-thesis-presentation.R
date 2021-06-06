@@ -135,10 +135,27 @@ for(variable in 1:2){
 	for(rho_config in 1:3){
 		cat(variable, rho_config, '\n')
 		realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-3-velocity_mu_config_', velocity_mu_config, '_velocity_var_config_', velocity_var_config, "_rho_config_", rho_config, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+		REALIZATIONS_MAT <- rbind(REALIZATIONS_MAT, realizations_example[4, (variable - 1) * n * TT + 1:(n * TT)])
+	}
+}
+
+movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov3', row_labels = c(expression(Z[1]), expression(Z[2])), col_labels = c(bquote(rho == -0.5), bquote(rho == 0), bquote(rho == 0.5)))
+
+
+###########   DEFORMATION MODEL   ###########
+
+velocity_mu_config = 2
+velocity_var_config = 1
+
+REALIZATIONS_MAT <- NULL
+
+for(variable in 1:2){
+	for(rho_config in 1:3){
+		cat(variable, rho_config, '\n')
+		realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-4-velocity_mu_config_', velocity_mu_config, '_velocity_var_config_', velocity_var_config, "_rho_config_", rho_config, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 		REALIZATIONS_MAT <- rbind(REALIZATIONS_MAT, realizations_example[1, (variable - 1) * n * TT + 1:(n * TT)])
 	}
 }
 
-movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov3', row_labels = c(expression(Z[1]), expression(Z[2])), col_labels = c(bquote(rho == -0.9), bquote(rho == 0), bquote(rho == 0.9)))
-
+movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov4', row_labels = c(expression(Z[1]), expression(Z[2])), col_labels = c(bquote(rho == -0.5), bquote(rho == 0), bquote(rho == 0.5)))
 

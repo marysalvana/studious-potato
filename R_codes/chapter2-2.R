@@ -1,4 +1,4 @@
-workstation = F
+workstation = T
 
 if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
@@ -7,7 +7,7 @@ if(workstation){
 	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 	number_of_cores_to_use = 24
 
-	model = 3
+	model = 4
 	velocity_mu_config = 2
 	velocity_var_config = 1
 	rho_config = 3
@@ -62,7 +62,7 @@ rho_k <- c(-0.5, 0, 0.5)
 VARIABLE_RHO <- rho_k[rho_config]
 
 
-N <- 50
+N <- 20
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
@@ -432,6 +432,80 @@ if(model == 1){
 
 			return(c(COVARIANCE))
 		}
+
+}else if(model == 4){
+
+	p <- c(0.067172812, -0.141482629, -0.123072246, -0.020615311, 0.026682032, -0.064454540, 0.006658298, -0.007649700, 0.047388007, -0.004046326, 0.035169697, -0.032544016, -0.009401134, 0.036043187, 0.004287410, -0.010179291, 0.016116570, 0.022926999, -0.105069368, 0.117549831, -0.017031510, 0.094188039, 0.057326933)
+
+        jWarp = 1:10
+	theta <- exp(p[1:3])
+
+	beta1 <- p[3 + 1:length(jWarp)]
+	beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
+
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+	PARAMETER_DEFORMATION <- t(sigma) %*% parWarpsSum
+	PARAMETER_DEFORMATION2 <- PARAMETER_DEFORMATION + 1
+	#PARAMETER_DEFORMATION2 <- matrix(0, ncol = ncol(PARAMETER_DEFORMATION), nrow = nrow(PARAMETER_DEFORMATION))
+
+
+
+	cat('Computing covariances...', '\n')
+
+
+		cores=detectCores()
+
+		#number_of_cores_to_use = cores[1]-1 # not to overload the computer
+		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+
+		cl <- makeCluster(number_of_cores_to_use) 
+		registerDoParallel(cl)
+
+		clusterExport(cl, "root")
+		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
+		
+		if(workstation){
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
+		}else{
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
+		}
+
+		clusterExport(cl, c("PARAMETER_DEFORMATION", "PARAMETER_DEFORMATION2", "TT"), envir = environment())
+
+		cat('Simulating wind values...', '\n')
+
+		set.seed(1234)
+		wind_vals <- mvrnorm(10, WIND_MU, WIND_VAR)
+
+		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
+
+		output <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "MULTIVARIATE_DEFORMATION_FOR_FITTING_PARALLEL") %dopar% {
+			
+			COVARIANCE <- MULTIVARIATE_MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, PARAMETER_DEFORMATION2 = PARAMETER_DEFORMATION2, FITTING = T, PARALLEL = T)
+
+			return(c(COVARIANCE))
+		}
+
+		stopCluster(cl)
+
+
+
+		cov4 <- matrix(output, n * TT * 2, n * TT * 2) / nrow(wind_vals) 
+
+		cat('Generating realizations...', '\n')
+
+		set.seed(1)
+		r4 <- rmvn(10, rep(0, n * TT * 2), cov4, ncores = number_of_cores_to_use)
+
+		cat('Saving the values...', '\n')
+
+		write.table(cov4[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-4-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_rho_config_", rho_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+	write.table(r4[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-4-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_rho_config_", rho_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 }
 

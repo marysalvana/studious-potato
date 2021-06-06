@@ -125,6 +125,43 @@ MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS <- function(PARAMETER, PARA
         return(FINAL_DATA) 
 }
 
+MULTIVARIATE_MATERN_UNI_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, PARAMETER_DEFORMATION2, LOCATION, TIME, N_SIM = NULL, FITTING = F, PARALLEL = F) {
+
+	n <- nrow(LOCATION)
+
+	LOCATION_NEW <- NULL
+
+        for(tt in 0:(TIME - 1)){
+                LOCATION_NEW <- rbind(LOCATION_NEW, cbind(LOCATION, rep(tt, n)))
+        }
+
+	if(!is.null(N_SIM)){
+		set.seed(1234)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = PARAMETER[7:8], Sigma = matrix(PARAMETER[9:12], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+	}else{
+		WIND_SIMULATED <- matrix(PARAMETER[7:8], ncol = 2, byrow = T)	
+	}
+
+	if(!FITTING & !PARALLEL){
+		SIGMA <- MULTIVARIATE_DEFORMATION(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_DEFORMATION, param_nonstat2 = PARAMETER_DEFORMATION2)
+
+		FINAL_DATA <- list("covariance" = SIGMA[[1]], "parameters" = SIGMA[[2]])
+	}else if(!FITTING & PARALLEL){
+                SIGMA <- MULTIVARIATE_DEFORMATION_PARALLEL(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_DEFORMATION, param_nonstat2 = PARAMETER_DEFORMATION2)
+
+                FINAL_DATA <- SIGMA
+        }else if(FITTING & !PARALLEL){
+		SIGMA <- MULTIVARIATE_DEFORMATION_FOR_FITTING(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_DEFORMATION, param_nonstat2 = PARAMETER_DEFORMATION2)
+
+		FINAL_DATA <- list("covariance" = SIGMA[[1]])
+	}else if(FITTING & PARALLEL){
+                SIGMA <- MULTIVARIATE_DEFORMATION_FOR_FITTING_PARALLEL(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, param_nonstat = PARAMETER_DEFORMATION, param_nonstat2 = PARAMETER_DEFORMATION2)
+
+                FINAL_DATA <- SIGMA
+        }
+ 	
+        return(FINAL_DATA) 
+}
 ##########################################################################################################################
 
 MATERN_UNI_POINT_SOURCE_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, LOCATION1, LOCATION2) {
