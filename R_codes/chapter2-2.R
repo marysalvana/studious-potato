@@ -1,4 +1,4 @@
-workstation = T
+workstation = F
 
 if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
@@ -6,6 +6,12 @@ if(workstation){
 	source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
 	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 	number_of_cores_to_use = 24
+
+	model = 3
+	velocity_mu_config = 2
+	velocity_var_config = 1
+	rho_config = 3
+
 }else{
 	directory <- '/ibex/scratch/salvanmo/'
 	root <- paste(directory, 'studious-potato/', sep = '')
@@ -18,6 +24,7 @@ if(workstation){
 	model = as.numeric(args[1])
 	velocity_mu_config = as.numeric(args[2])
 	velocity_var_config = as.numeric(args[3])
+	rho_config = as.numeric(args[4])
 }
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
@@ -41,13 +48,8 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 
 #######################################################################################
 
-model = 3
-velocity_mu_config = 2
-velocity_var_config = 1
-
 cat("model:", model, "velocity_mu_config", velocity_mu_config, "velocity_var_config", velocity_var_config, '\n')
 
-rho_config = 3
 
 
 mu_k <- c(0, 0.3001)
@@ -60,7 +62,7 @@ rho_k <- c(-0.5, 0, 0.5)
 VARIABLE_RHO <- rho_k[rho_config]
 
 
-N <- 20
+N <- 50
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
