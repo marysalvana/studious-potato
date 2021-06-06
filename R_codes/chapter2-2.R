@@ -58,7 +58,7 @@ var_k <- c(0.001, 0.1, 1)
 WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
 WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 
-rho_k <- c(-0.5, 0, 0.5)
+rho_k <- c(-0.9, 0, 0.9)
 VARIABLE_RHO <- rho_k[rho_config]
 
 
