@@ -12,6 +12,12 @@ if(workstation){
 	source(file = paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = ''))
 	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp",sep=''))
 	number_of_cores_to_use = 39
+
+	args <- commandArgs(trailingOnly = TRUE)
+
+	model = as.numeric(args[1])
+	velocity_mu_config = as.numeric(args[2])
+	velocity_var_config = as.numeric(args[3])
 }
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
@@ -35,11 +41,9 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 
 #######################################################################################
 
-args <- commandArgs(trailingOnly = TRUE)
-
-model = as.numeric(args[1])
-velocity_mu_config = as.numeric(args[2])
-velocity_var_config = as.numeric(args[3])
+model = 3
+velocity_mu_config = 2
+velocity_var_config = 1
 
 cat("model:", model, "velocity_mu_config", velocity_mu_config, "velocity_var_config", velocity_var_config, '\n')
 
@@ -347,7 +351,7 @@ if(model == 1){
 		cov3 <- MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 1, 0.23, 0.5, 1, VARIABLE_RHO, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, PARAMETER_NONSTAT2 = PARAMETER_NONSTAT2, FITTING = T, PARALLEL = T)
 
 		set.seed(1)
-		r3 <- rmvn(100, rep(0, n * TT * 2), cov3, ncores = number_of_cores_to_use)
+		r3 <- rmvn(10, rep(0, n * TT * 2), cov3, ncores = number_of_cores_to_use)
 	}else{
 		cores=detectCores()
 
@@ -370,7 +374,7 @@ if(model == 1){
 			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
 		}
 
-		clusterExport(cl, c("PARAMETER_NONSTAT", "TT"), envir = environment())
+		clusterExport(cl, c("PARAMETER_NONSTAT", "PARAMETER_NONSTAT2", "TT"), envir = environment())
 
 		cat('Simulating wind values...', '\n')
 
@@ -390,7 +394,7 @@ if(model == 1){
 
 
 
-		cov3 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
+		cov3 <- matrix(output, n * TT * 2, n * TT * 2) / nrow(wind_vals) 
 
 		cat('Generating realizations...', '\n')
 
