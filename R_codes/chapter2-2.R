@@ -7,10 +7,11 @@ if(workstation){
 	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 	number_of_cores_to_use = 24
 
-	model = 4
+	model = 5
 	velocity_mu_config = 2
 	velocity_var_config = 1
 	rho_config = 3
+	lmc_config = 1
 
 }else{
 	directory <- '/ibex/scratch/salvanmo/'
@@ -25,6 +26,7 @@ if(workstation){
 	velocity_mu_config = as.numeric(args[2])
 	velocity_var_config = as.numeric(args[3])
 	rho_config = as.numeric(args[4])
+	lmc_config = as.numeric(args[5])
 }
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
@@ -412,26 +414,85 @@ if(model == 1){
 
 }else if(model == 5){
 
-		output <- foreach(i=1:nrow(wind_vals), .combine=cbind, .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
-			
-			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
+	PARAMETER_NONSTAT <- PARAMETER_NONSTAT2 <- matrix(0, ncol = 3, nrow = n * TT)
 
-			return(c(COVARIANCE))
+	cat('Computing covariances...', '\n')
+
+
+		cores=detectCores()
+
+		#number_of_cores_to_use = cores[1]-1 # not to overload the computer
+		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+
+		cl <- makeCluster(number_of_cores_to_use) 
+		registerDoParallel(cl)
+
+		clusterExport(cl, "root")
+		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
+		
+		if(workstation){
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
+		}else{
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
 		}
 
-		output22 <- foreach(i=1:nrow(wind_vals), .combine=cbind, .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
+		clusterExport(cl, c("PARAMETER_NONSTAT", "PARAMETER_NONSTAT2", "TT"), envir = environment())
+
+
+		set.seed(1234)
+		wind_vals <- mvrnorm(10, WIND_MU, WIND_VAR)
+
+		set.seed(1234)
+		wind_vals2 <- mvrnorm(10, -WIND_MU, WIND_VAR)
+
+		output <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
 			
 			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 0.5, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
 
 			return(c(COVARIANCE))
 		}
 
-		output12 <- foreach(i=1:nrow(wind_vals), .combine=cbind, .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
+		output22 <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
 			
-			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(VARIABLE_RHO, 0.23, 0.5 * (0.5 + 1), wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
+			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_vals2[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
 
 			return(c(COVARIANCE))
 		}
+
+		cov11 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
+		cov22 <- matrix(output22, n * TT, n * TT) / nrow(wind_vals) 
+
+		if(lmc_config == 1){
+                        a11 = 0.9
+                        a12 = -0.1
+                        a21 = -0.2
+                        a22 = 0.8
+                }else if(lmc_config == 2){
+                        a11 = 0.9
+                        a12 = 0
+                        a21 = 0
+                        a22 = 0.8
+                }else if(lmc_config == 3){
+			a11 = 0.9
+			a12 = 0.1
+			a21 = 0.2
+			a22 = 0.8
+		}
+
+		cov5 <- rbind(cbind(a11^2 * cov11 +  a12^2 * cov22, a11 * a21 * cov11 + a12 * a22 * cov22), cbind(t(a11 * a21 * cov11 + a12 * a22 * cov22), a21^2 * cov11 +  a22^2 * cov22))
+
+		cat('Generating realizations...', '\n')
+
+		set.seed(1)
+		r5 <- rmvn(10, rep(0, n * TT * 2), cov5, ncores = number_of_cores_to_use)
+		
+		cat('Saving the values...', '\n')
+
+		write.table(cov5[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-5-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_lmc_config_", lmc_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+	write.table(r5[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-5-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_lmc_config_", lmc_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 }else if(model == 4){
 
