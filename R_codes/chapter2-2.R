@@ -1,4 +1,4 @@
-workstation = T
+workstation = F
 
 if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
@@ -62,7 +62,7 @@ rho_k <- c(-0.5, 0, 0.5)
 VARIABLE_RHO <- rho_k[rho_config]
 
 
-N <- 20
+N <- 50
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
@@ -485,7 +485,7 @@ if(model == 1){
 
 		output <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "MULTIVARIATE_DEFORMATION_FOR_FITTING_PARALLEL") %dopar% {
 			
-			COVARIANCE <- MULTIVARIATE_MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, PARAMETER_DEFORMATION2 = PARAMETER_DEFORMATION2, FITTING = T, PARALLEL = T)
+			COVARIANCE <- MULTIVARIATE_MATERN_UNI_DEFORMATION(PARAMETER = c(1, 1, 0.23, 0.5, 1, VARIABLE_RHO, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, PARAMETER_DEFORMATION2 = PARAMETER_DEFORMATION2, FITTING = T, PARALLEL = T)
 
 			return(c(COVARIANCE))
 		}
