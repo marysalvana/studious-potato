@@ -727,58 +727,6 @@ NumericMatrix nonfrozen_rcpp_multi_cross(NumericMatrix & Loc1, NumericMatrix & L
 
 // [[Rcpp::export]]
 
-NumericMatrix nonfrozen_rcpp(NumericMatrix & Loc1, NumericMatrix & Loc2, NumericVector & param, NumericVector & v_mean, NumericMatrix & v_var) {
-
-	const int m = Loc1.nrow();
-
-	double sigma2 = param(0), range = param(1), nu = param(2);
-
-	NumericMatrix cor(m, m);
-
-	for (int i = 0; i < m; ++i) {
-		for (int j = 0; j < m; ++j) {
-
-		double s1x = Loc1(i, 0);
-		double s2x = Loc2(j, 0);
-		double s1y = Loc1(i, 1);
-		double s2y = Loc2(j, 1);
-		int t1 = Loc1(i, 2);
-		int t2 = Loc2(j, 2);
-		int u_2 = pow(t1 - t2, 2);
-
-		double new_s1x = s1x - v_mean[0] * t1;
-		double new_s1y = s1y - v_mean[1] * t1;
-		double new_s2x = s2x - v_mean[0] * t2;
-		double new_s2y = s2y - v_mean[1] * t2;
-		double hx = new_s1x - new_s2x;
-		double hy = new_s1y - new_s2y;
-
-		double Kernel_ij_11 = 1 + u_2 * v_var(0, 0);
-		double Kernel_ij_12 = u_2 * v_var(0, 1);
-		double Kernel_ij_22 = 1 + u_2 * v_var(1, 1);
-
-		double Inv_ij_11 = Kernel_ij_22; 
-		double Inv_ij_22 = Kernel_ij_11;
-		double Inv_ij_12 = - Kernel_ij_12; 
-		double det_ij = Kernel_ij_11 * Kernel_ij_22 - Kernel_ij_12 * Kernel_ij_12;
-
-		double dist = sqrt((hx * hx * Inv_ij_11 + 2 * hx * hy * Inv_ij_12 + hy * hy * Inv_ij_22) / det_ij) / range;
-	
-		//Rprintf("u : %d, dist : %f \n", u_2, dist);
-
-		if (dist == 0) {
-			cor(i, j) = sigma2 / pow(det_ij, 0.5);
-		} else {
-			cor(i, j) = sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu) * pow(det_ij, 0.5));
-		}
-		}
-	}
-	return cor;
-}
-
-
-// [[Rcpp::export]]
-
 NumericMatrix MULTIVARIATE_DEFORMATION_FOR_FITTING_PARALLEL(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericVector & param_nonstat, NumericVector & param_nonstat2) {
   
   	const int m = Loc.nrow(), n_wind = wind.nrow();
