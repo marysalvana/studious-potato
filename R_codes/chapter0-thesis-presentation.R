@@ -139,6 +139,6 @@ for(variable in 1:2){
 	}
 }
 
-movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov3', row_labels = c(expression(Z[1]), expression(Z[2])))
+movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov3', row_labels = c(expression(Z[1]), expression(Z[2])), col_labels = c(bquote(rho == -0.9), bquote(rho == 0), bquote(rho == 0.9)))
 
 
