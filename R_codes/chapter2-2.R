@@ -12,6 +12,7 @@ if(workstation){
 	velocity_var_config = 1
 	rho_config = 3
 	lmc_config = 1
+	advec_config = 1
 
 }else{
 	directory <- '/ibex/scratch/salvanmo/'
@@ -27,6 +28,7 @@ if(workstation){
 	velocity_var_config = as.numeric(args[3])
 	rho_config = as.numeric(args[4])
 	lmc_config = as.numeric(args[5])
+	advec_config = as.numeric(args[6])
 }
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
@@ -468,18 +470,18 @@ if(model == 1){
 		if(lmc_config == 1){
                         a11 = 0.9
                         a12 = -0.1
-                        a21 = -0.2
-                        a22 = 0.8
+                        a21 = -0.6
+                        a22 = 0.4
                 }else if(lmc_config == 2){
                         a11 = 0.9
                         a12 = 0
                         a21 = 0
-                        a22 = 0.8
+                        a22 = 0.4
                 }else if(lmc_config == 3){
 			a11 = 0.9
 			a12 = 0.1
-			a21 = 0.2
-			a22 = 0.8
+			a21 = 0.6
+			a22 = 0.4
 		}
 
 		cov5 <- rbind(cbind(a11^2 * cov11 +  a12^2 * cov22, a11 * a21 * cov11 + a12 * a22 * cov22), cbind(t(a11 * a21 * cov11 + a12 * a22 * cov22), a21^2 * cov11 +  a22^2 * cov22))
@@ -569,6 +571,62 @@ if(model == 1){
 
 	write.table(r4[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-4-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_rho_config_", rho_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
+}else if(model == 6){
+
+
+	PARAMETER_NONSTAT <- PARAMETER_NONSTAT2 <- matrix(0, ncol = 3, nrow = n * TT)
+
+
+		cores=detectCores()
+
+		#number_of_cores_to_use = cores[1]-1 # not to overload the computer
+		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+
+		cl <- makeCluster(number_of_cores_to_use) 
+		registerDoParallel(cl)
+
+
+		clusterExport(cl, "root")
+		clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
+		
+		if(workstation){
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp", sep = '')))
+		}else{
+			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = '')))
+			clusterEvalQ(cl, sourceCpp(paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp", sep = '')))
+		}
+
+		clusterExport(cl, c("PARAMETER_NONSTAT", "PARAMETER_NONSTAT2", "TT"), envir = environment())
+
+		cat('Simulating wind values...', '\n')
+
+		set.seed(1234)
+		wind_vals <- mvrnorm(10, WIND_MU, WIND_VAR)
+
+		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
+
+		output <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
+			
+			COVARIANCE <- MULTIPLE_ADVEC_MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 1, 0.23, 0.5, 1, VARIABLE_RHO, wind_vals[i, ], wind_vals2[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, PARAMETER_NONSTAT2 = PARAMETER_NONSTAT2, FITTING = T, PARALLEL = T)
+
+			return(c(COVARIANCE))
+		}
+
+		stopCluster(cl)
+
+
+
+		cov6 <- matrix(output, n * TT * 2, n * TT * 2) / nrow(wind_vals) 
+
+		cat('Generating realizations...', '\n')
+
+		set.seed(1)
+		r6 <- rmvn(10, rep(0, n * TT * 2), cov3, ncores = number_of_cores_to_use)
+
+		cat('Saving the values...', '\n')
+	
+		write.table(cov6[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-6-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_advec_config_", advec_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 }
 
 end_time <- Sys.time()
