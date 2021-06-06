@@ -51,6 +51,7 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 #######################################################################################
 
 cat("model:", model, "velocity_mu_config", velocity_mu_config, "velocity_var_config", velocity_var_config, '\n')
+cat("lmc_config", lmc_config, '\n')
 
 
 
