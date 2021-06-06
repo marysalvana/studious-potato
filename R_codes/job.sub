@@ -3,13 +3,14 @@
 #SBATCH -J “nodes/cores”
 
 #SBATCH --partition=batch
-#SBATCH --time=23:00:00
+#SBATCH --time=10:00:00
 #SBATCH -o output/%j.out
 #SBATCH -e output/%j.err
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=40
 #SBATCH --ntasks=1
 #SBATCH --mem=200GB
+##SBATCH --constraint=amd
 #SBATCH -p batch --account=stsda
 ##SBATCH --qos=genton-2020-05
 
@@ -27,5 +28,5 @@ module load gsl/2.4
 module load R/3.6.0/gnu-6.4.0
 mkdir -p $R_LIBS
 
-Rscript /ibex/scratch/salvanmo/studious-potato/R_codes/chapter2-2-IBEX.R
+Rscript /ibex/scratch/salvanmo/studious-potato/R_codes/chapter2-2.R $1 $2 $3 $4 $5 $6
 
