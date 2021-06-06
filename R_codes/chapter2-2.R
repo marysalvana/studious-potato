@@ -447,7 +447,7 @@ if(model == 1){
 		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
 
 	PARAMETER_DEFORMATION <- t(sigma) %*% parWarpsSum
-	PARAMETER_DEFORMATION2 <- PARAMETER_DEFORMATION + 1
+	PARAMETER_DEFORMATION2 <- PARAMETER_DEFORMATION
 	#PARAMETER_DEFORMATION2 <- matrix(0, ncol = ncol(PARAMETER_DEFORMATION), nrow = nrow(PARAMETER_DEFORMATION))
 
 
