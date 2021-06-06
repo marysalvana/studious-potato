@@ -459,7 +459,7 @@ if(model == 1){
 
 		output22 <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
 			
-			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_vals2[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
+			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_vals2[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT2, FITTING = T, PARALLEL = T)
 
 			return(c(COVARIANCE))
 		}
@@ -489,7 +489,7 @@ if(model == 1){
 		cat('Generating realizations...', '\n')
 
 		set.seed(1)
-		r5 <- rmvn(10, rep(0, n * TT * 2), cov5, ncores = number_of_cores_to_use)
+		r5 <- rmvn(10, rep(0, n * TT * 2), cov2cor(cov5), ncores = number_of_cores_to_use)
 		
 		cat('Saving the values...', '\n')
 
@@ -608,7 +608,7 @@ if(model == 1){
 
 		output <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
 			
-			COVARIANCE <- MULTIPLE_ADVEC_MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 1, 0.23, 0.5, 1, VARIABLE_RHO, wind_vals[i, ], wind_vals2[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, PARAMETER_NONSTAT2 = PARAMETER_NONSTAT2, FITTING = T, PARALLEL = T)
+			COVARIANCE <- MULTIPLE_ADVEC_MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 1, 0.23, 0.5, 1, VARIABLE_RHO, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, PARAMETER_NONSTAT2 = PARAMETER_NONSTAT2, FITTING = T, PARALLEL = T)
 
 			return(c(COVARIANCE))
 		}
