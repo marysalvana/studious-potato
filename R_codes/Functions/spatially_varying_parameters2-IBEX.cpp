@@ -664,66 +664,6 @@ NumericMatrix MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(Num
 	return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
 }
 
-// [[Rcpp::export]]
-
-NumericMatrix nonfrozen_rcpp_multi_cross(NumericMatrix & Loc1, NumericMatrix & Loc2, NumericVector & param, NumericVector & v_mean, NumericMatrix & v_var) {
-
-	const int m = Loc1.nrow();
-
-	double sigma2 = param(0), range = param(1), nu = param(2);
-
-	Eigen::MatrixXd Sigma(2, 2);
-	Eigen::MatrixXd Sigma_wind = as<Eigen::MatrixXd>(v_var);
-
-	NumericMatrix cor(m, m);
-
-	for (int i = 0; i < m; ++i) {
-		for (int j = 0; j < m; ++j) {
-
-		double s1x = Loc1(i, 0);
-		double s2x = Loc2(j, 0);
-		double s1y = Loc1(i, 1);
-		double s2y = Loc2(j, 1);
-		int t1 = Loc1(i, 2);
-		int t2 = Loc2(j, 2);
-
-		Eigen::MatrixXd t_mat(2, 4);
-		t_mat.leftCols(2) = -t1 * Eigen::MatrixXd::Identity(2, 2);
-		t_mat.rightCols(2) = t2 * Eigen::MatrixXd::Identity(2, 2);
-
-		Eigen::MatrixXd Sigma_new = t_mat.transpose() * t_mat + Sigma_wind.inverse(); 
-		Eigen::MatrixXd Sigma_new_inv = Sigma_new.inverse(); 
-		Eigen::MatrixXd Sigma_tilde = Eigen::MatrixXd::Identity(2, 2) - t_mat * Sigma_new_inv * t_mat.transpose();
-
-		Eigen::MatrixXd Sigma_for_determinant = Sigma_wind * t_mat.transpose() * t_mat + Eigen::MatrixXd::Identity(4, 4);
-		//double det_ij = (2 * Sigma_tilde).inverse().determinant();
-		double det_ij = (Sigma_for_determinant).determinant();
-
-		//Rprintf("det : %f \n", det_ij);
-
-		double new_s1x = s1x - v_mean[0] * t1;
-		double new_s1y = s1y - v_mean[1] * t1;
-		double new_s2x = s2x - v_mean[2] * t2;
-		double new_s2y = s2y - v_mean[3] * t2;
-
-		Eigen::VectorXd h(2);		
-
-		h[0] = new_s1x - new_s2x;
-		h[1] = new_s1y - new_s2y;
-			
-		double dist = sqrt(h.transpose() * Sigma_tilde * h) / range;
-	
-		if (dist == 0) {
-			cor(i, j) = sigma2 / pow(det_ij, 0.5);
-		} else {
-			cor(i, j) = sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu) * pow(det_ij, 0.5));
-		}
-		//std::cout << "Sigma_for_determinant: \n" << Sigma_for_determinant << std::endl;
-		//std::cout << "det_ij: \n" << det_ij << std::endl;
-		}
-	}
-	return cor;
-}
 
 // [[Rcpp::export]]
 
