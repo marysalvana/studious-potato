@@ -162,6 +162,107 @@ MULTIVARIATE_MATERN_UNI_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION
  	
         return(FINAL_DATA) 
 }
+
+
+MULTIPLE_ADVEC_MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS <- function(PARAMETER, PARAMETER_NONSTAT, PARAMETER_NONSTAT2, LOCATION, TIME, N_SIM = NULL, FITTING = F, PARALLEL = F) {
+
+	n <- nrow(LOCATION)
+
+	LOCATION_NEW <- NULL
+
+        for(tt in 0:(TIME - 1)){
+                LOCATION_NEW <- rbind(LOCATION_NEW, cbind(LOCATION, rep(tt, n)))
+        }
+
+	if(!is.null(N_SIM)){
+		set.seed(1234)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = PARAMETER[7:8], Sigma = matrix(PARAMETER[9:12], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+	}else{
+		WIND_SIMULATED <- matrix(PARAMETER[7:8], ncol = 2, byrow = T)	
+		WIND_SIMULATED2 <- matrix(PARAMETER[9:10], ncol = 2, byrow = T)	
+	}
+
+	if(!FITTING & !PARALLEL){
+		SIGMA <- MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, wind2 = WIND_SIMULATED2, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+		FINAL_DATA <- list("covariance" = SIGMA[[1]], "parameters" = SIGMA[[2]])
+	}else if(!FITTING & PARALLEL){
+                SIGMA <- MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_PARALLEL(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, wind2 = WIND_SIMULATED2, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+                FINAL_DATA <- SIGMA
+        }else if(FITTING & !PARALLEL){
+		SIGMA <- MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, wind2 = WIND_SIMULATED2, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+		FINAL_DATA <- list("covariance" = SIGMA[[1]])
+	}else if(FITTING & PARALLEL){
+                SIGMA <- MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(Loc = LOCATION_NEW, param = PARAMETER[1:6], wind = WIND_SIMULATED, wind2 = WIND_SIMULATED2, param_nonstat = PARAMETER_NONSTAT, param_nonstat2 = PARAMETER_NONSTAT2, time = TIME)
+
+                FINAL_DATA <- SIGMA
+        }
+        return(FINAL_DATA) 
+}
+
+nonfrozen_matern_cov_multi_advec_small_scale <- function(theta, wind_mu1, wind_mu2, wind_var1, wind_var2, wind_var12, max_time_lag = 0, q = 2, LOCS){
+
+	start_time <- theta[7]
+
+	if(is.na(start_time))	start_time <- 0
+
+	###################												###################
+	################### RETURNS a q * nrow(LOCS) * (max_time_lag + 1) x q * nrow(LOCS) * (max_time_lag + 1) matrix 	###################
+	###################												###################	
+
+	locs1 <- locs <- cbind(LOCS, rep(0 + start_time, nrow(LOCS)))
+	#locs_A <- cbind(LOCS[, 1] - wind_mu1[1] * theta[7], LOCS[, 2] - wind_mu1[2] * theta[7], rep(0 + start_time, nrow(LOCS)))
+	#locs_B <- cbind(LOCS[, 1] - wind_mu2[1] * theta[7], LOCS[, 2] - wind_mu2[2] * theta[7], rep(0 + start_time, nrow(LOCS)))
+
+	#for(tt in 1:max_time_lag){
+	#	locs_A <- rbind(locs_A, cbind(LOCS[, 1] - wind_mu1[1] * theta[7], LOCS[, 2] - wind_mu1[2] * theta[7], rep(0 + start_time + tt, nrow(LOCS))))
+	#	locs_B <- rbind(locs_B, cbind(LOCS[, 1] - wind_mu2[1] * theta[7], LOCS[, 2] - wind_mu2[2] * theta[7], rep(0 + start_time + tt, nrow(LOCS))))
+	#}
+
+	if(max_time_lag > 0){
+		for(tt in 1:max_time_lag){
+			locs <- rbind(locs, cbind(LOCS, rep(0 + start_time + tt, nrow(LOCS))))
+		}
+	}
+
+	rho_temp <- theta[6]
+	nu <- theta[4:5]
+	beta <- theta[3]
+	sigma2 <- theta[1:2]
+
+	nu1 <- nu[1]
+	nu2 <- nu[2]
+	nu3 <- (nu1 + nu2)/2
+
+	rho <- rho_temp * (gamma(nu1 + 3/2) / gamma(nu1))^(1/2) * (gamma(nu2 + 3/2) / gamma(nu2))^(1/2) * gamma(nu3) / (gamma(nu3 + 3/2))
+
+	output11 <- output22 <- output12 <- list()
+
+	for(tt in 0:max_time_lag){
+
+		locs2 <- cbind(LOCS, rep(0 + start_time + tt, nrow(LOCS)))
+
+		Sigma_temp1 <- nonfrozen_rcpp(Loc1 = locs1, Loc2 = locs2, param = c(sigma2[1], beta, nu[1]), v_mean = wind_mu1, v_var = wind_var1)
+		Sigma_temp2 <- nonfrozen_rcpp(Loc1 = locs1, Loc2 = locs2, param = c(sigma2[2], beta, nu[2]), v_mean = wind_mu2, v_var = wind_var2)
+
+		output11[[tt + 1]] <- Sigma_temp1
+		output22[[tt + 1]] <- Sigma_temp2
+
+	}
+	Sigma11 <- toeplitz_mat(output11)
+	Sigma22 <- toeplitz_mat(output22)
+	Sigma12 <- nonfrozen_rcpp_multi_cross(Loc1 = locs, Loc2 = locs, param = c( sqrt(sigma2[1] * sigma2[2]) * rho, beta, nu3), v_mean = c(wind_mu1, wind_mu2), v_var = rbind(cbind(wind_var1, wind_var12), cbind(t(wind_var12), wind_var2)))
+
+	#nonfrozen_rcpp_multi_cross(Loc1 = matrix(locs[1, ], nrow = 1), Loc2 = matrix(locs[550 + 1, ], nrow = 1), param = c( sqrt(sigma2[1] * sigma2[2]) * rho, beta, nu3), v_mean = c(wind_mu1, wind_mu2), v_var = rbind(cbind(wind_var1, wind_var12), cbind(t(wind_var12), wind_var2)))
+
+	S <- rbind(cbind(Sigma11, Sigma12), cbind(t(Sigma12), Sigma22))
+
+	return(S)
+}
+
+
 ##########################################################################################################################
 
 MATERN_UNI_POINT_SOURCE_DEFORMATION <- function(PARAMETER, PARAMETER_DEFORMATION, LOCATION1, LOCATION2) {

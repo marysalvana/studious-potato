@@ -837,6 +837,77 @@ NumericMatrix MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTI
 
 			      	double x1 = new_loc1_x - new_loc2_x;
 			      	double x2 = new_loc1_y - new_loc2_y;
+				double dist11 = sqrt(pow(x1, 2) + pow(x2, 2));
+
+			      	new_loc1_x = Loc(i, 0) - wind2(k, 0) * Loc(i, 2);
+			      	new_loc1_y = Loc(i, 1) - wind2(k, 1) * Loc(i, 2);
+			      	new_loc2_x = Loc(j, 0) - wind2(k, 0) * Loc(j, 2);
+			      	new_loc2_y = Loc(j, 1) - wind2(k, 1) * Loc(j, 2);
+
+			      	x1 = new_loc1_x - new_loc2_x;
+			      	x2 = new_loc1_y - new_loc2_y;
+				double dist22 = sqrt(pow(x1, 2) + pow(x2, 2));
+
+			      	new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+			      	new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+			      	new_loc2_x = Loc(j, 0) - wind2(k, 0) * Loc(j, 2);
+			      	new_loc2_y = Loc(j, 1) - wind2(k, 1) * Loc(j, 2);
+
+			      	x1 = new_loc1_x - new_loc2_x;
+			      	x2 = new_loc1_y - new_loc2_y;
+				double dist12 = sqrt(pow(x1, 2) + pow(x2, 2));
+
+				if (dist11 == 0) {
+					temp_val11 = temp_val11 + sigma2_1;
+					temp_val22 = temp_val22 + sigma2_2;
+					temp_val12 = temp_val12 + rho * sqrt(sigma2_1 * sigma2_2);
+				}else {
+					temp_val11 = temp_val11 + sigma2_1 * pow(dist11, nu1) * cyl_bessel_k(nu1, dist11) / (pow(2, nu1 - 1) * tgamma(nu1));
+					temp_val22 = temp_val22 + sigma2_2 * pow(dist22, nu2) * cyl_bessel_k(nu2, dist22) / (pow(2, nu2 - 1) * tgamma(nu2));
+					temp_val12 = temp_val12 + rho * sqrt(sigma2_1 * sigma2_2) * pow(dist12, nu12) * cyl_bessel_k(nu12, dist12) / (pow(2, nu12 - 1) * tgamma(nu12));
+				}
+
+        		}
+        		cor11(i, j) = temp_val11 / n_wind;
+        		//cor11(j, i) = cor11(i, j);
+
+        		cor22(i, j) = temp_val22 / n_wind;
+        		//cor22(j, i) = cor22(i, j);
+
+        		cor12(i, j) = temp_val12 / n_wind;
+      			cor21(j, i) = cor12(i, j);
+
+			//cor12(j, i) = cor12(i, j);
+      			//cor21(i, j) = cor12(j, i);
+		}
+	}
+	return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
+}
+
+// [[Rcpp::export]]
+
+NumericMatrix ORIG_MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL(NumericMatrix & Loc, NumericVector & param, NumericMatrix & wind, NumericMatrix & wind2, NumericMatrix & param_nonstat, NumericMatrix & param_nonstat2, int & time) {
+
+  	const int m = Loc.nrow(), n_wind = wind.nrow();
+  	float sigma2_1 = param(0), sigma2_2 = param(1), beta = param(2), nu1 = param(3), nu2 = param(4), rho = param(5);
+	float nu12 = 0.5 * (nu1 + nu2);
+	NumericMatrix cor11(m, m), cor22(m, m), cor12(m, m), cor21(m, m);
+
+	for (int i = 0; i < m; ++i) {
+    		for (int j = 0; j <m; ++j) {
+    		//for (int j = 0; j <= i; ++j) {
+
+        		double temp_val11 = 0.0, temp_val22 = 0.0, temp_val12 = 0.0;
+
+        		for (int k = 0; k < n_wind; ++k) {
+
+			      	double new_loc1_x = Loc(i, 0) - wind(k, 0) * Loc(i, 2);
+			      	double new_loc1_y = Loc(i, 1) - wind(k, 1) * Loc(i, 2);
+			      	double new_loc2_x = Loc(j, 0) - wind(k, 0) * Loc(j, 2);
+			      	double new_loc2_y = Loc(j, 1) - wind(k, 1) * Loc(j, 2);
+
+			      	double x1 = new_loc1_x - new_loc2_x;
+			      	double x2 = new_loc1_y - new_loc2_y;
 			      	NumericVector z2 = {x1, x2};
 
 			      	double omega1 = param_nonstat(i, 0);
@@ -977,6 +1048,118 @@ NumericMatrix MULTIPLE_ADVEC_MULTIVARIATE_SPATIALLY_VARYING_PARAMETERS_FOR_FITTI
 		}
 	}
 	return rbind_cpp(cbind_cpp(cor11, cor12), cbind_cpp(cor21, cor22));
+}
+
+// [[Rcpp::export]]
+
+NumericMatrix nonfrozen_rcpp_multi_cross(NumericMatrix & Loc1, NumericMatrix & Loc2, NumericVector & param, NumericVector & v_mean, NumericMatrix & v_var) {
+
+	const int m = Loc1.nrow();
+
+	double sigma2 = param(0), range = param(1), nu = param(2);
+
+	Eigen::MatrixXd Sigma(2, 2);
+	Eigen::MatrixXd Sigma_wind = as<Eigen::MatrixXd>(v_var);
+
+	NumericMatrix cor(m, m);
+
+	for (int i = 0; i < m; ++i) {
+		for (int j = 0; j < m; ++j) {
+
+		double s1x = Loc1(i, 0);
+		double s2x = Loc2(j, 0);
+		double s1y = Loc1(i, 1);
+		double s2y = Loc2(j, 1);
+		int t1 = Loc1(i, 2);
+		int t2 = Loc2(j, 2);
+
+		Eigen::MatrixXd t_mat(2, 4);
+		t_mat.leftCols(2) = -t1 * Eigen::MatrixXd::Identity(2, 2);
+		t_mat.rightCols(2) = t2 * Eigen::MatrixXd::Identity(2, 2);
+
+		Eigen::MatrixXd Sigma_new = t_mat.transpose() * t_mat + Sigma_wind.inverse(); 
+		Eigen::MatrixXd Sigma_new_inv = Sigma_new.inverse(); 
+		Eigen::MatrixXd Sigma_tilde = Eigen::MatrixXd::Identity(2, 2) - t_mat * Sigma_new_inv * t_mat.transpose();
+
+		Eigen::MatrixXd Sigma_for_determinant = Sigma_wind * t_mat.transpose() * t_mat + Eigen::MatrixXd::Identity(4, 4);
+		//double det_ij = (2 * Sigma_tilde).inverse().determinant();
+		double det_ij = (Sigma_for_determinant).determinant();
+
+		//Rprintf("det : %f \n", det_ij);
+
+		double new_s1x = s1x - v_mean[0] * t1;
+		double new_s1y = s1y - v_mean[1] * t1;
+		double new_s2x = s2x - v_mean[2] * t2;
+		double new_s2y = s2y - v_mean[3] * t2;
+
+		Eigen::VectorXd h(2);		
+
+		h[0] = new_s1x - new_s2x;
+		h[1] = new_s1y - new_s2y;
+			
+		double dist = sqrt(h.transpose() * Sigma_tilde * h) / range;
+	
+		if (dist == 0) {
+			cor(i, j) = sigma2 / pow(det_ij, 0.5);
+		} else {
+			cor(i, j) = sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu) * pow(det_ij, 0.5));
+		}
+		//std::cout << "Sigma_for_determinant: \n" << Sigma_for_determinant << std::endl;
+		//std::cout << "det_ij: \n" << det_ij << std::endl;
+		}
+	}
+	return cor;
+}
+
+// [[Rcpp::export]]
+
+NumericMatrix nonfrozen_rcpp(NumericMatrix & Loc1, NumericMatrix & Loc2, NumericVector & param, NumericVector & v_mean, NumericMatrix & v_var) {
+
+	const int m = Loc1.nrow();
+
+	double sigma2 = param(0), range = param(1), nu = param(2);
+
+	NumericMatrix cor(m, m);
+
+	for (int i = 0; i < m; ++i) {
+		for (int j = 0; j < m; ++j) {
+
+		double s1x = Loc1(i, 0);
+		double s2x = Loc2(j, 0);
+		double s1y = Loc1(i, 1);
+		double s2y = Loc2(j, 1);
+		int t1 = Loc1(i, 2);
+		int t2 = Loc2(j, 2);
+		int u_2 = pow(t1 - t2, 2);
+
+		double new_s1x = s1x - v_mean[0] * t1;
+		double new_s1y = s1y - v_mean[1] * t1;
+		double new_s2x = s2x - v_mean[0] * t2;
+		double new_s2y = s2y - v_mean[1] * t2;
+		double hx = new_s1x - new_s2x;
+		double hy = new_s1y - new_s2y;
+
+		double Kernel_ij_11 = 1 + u_2 * v_var(0, 0);
+		double Kernel_ij_12 = u_2 * v_var(0, 1);
+		double Kernel_ij_22 = 1 + u_2 * v_var(1, 1);
+
+		double Inv_ij_11 = Kernel_ij_22; 
+		double Inv_ij_22 = Kernel_ij_11;
+		double Inv_ij_12 = - Kernel_ij_12; 
+		double det_ij = Kernel_ij_11 * Kernel_ij_22 - Kernel_ij_12 * Kernel_ij_12;
+
+		double dist = sqrt((hx * hx * Inv_ij_11 + 2 * hx * hy * Inv_ij_12 + hy * hy * Inv_ij_22) / det_ij) / range;
+	
+		//Rprintf("u : %d, dist : %f \n", u_2, dist);
+
+		if (dist == 0) {
+			cor(i, j) = sigma2 / pow(det_ij, 0.5);
+		} else {
+			cor(i, j) = sigma2 * pow(dist, nu) * cyl_bessel_k(nu, dist) / (pow(2, nu - 1) * tgamma(nu) * pow(det_ij, 0.5));
+		}
+		}
+	}
+	return cor;
 }
 
 // [[Rcpp::export]]

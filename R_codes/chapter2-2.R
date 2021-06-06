@@ -1,4 +1,4 @@
-workstation = F
+workstation = T
 
 if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
@@ -7,7 +7,7 @@ if(workstation){
 	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 	number_of_cores_to_use = 24
 
-	model = 5
+	model = 6
 	velocity_mu_config = 2
 	velocity_var_config = 1
 	rho_config = 3
@@ -66,8 +66,11 @@ WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 rho_k <- c(-0.5, 0, 0.5)
 VARIABLE_RHO <- rho_k[rho_config]
 
+advec_k <- c(-0.8, 0, 0.8)
+MULTIPLE_WIND_MU <- c(WIND_MU, WIND_MU)
+MULTIPLE_WIND_VAR <- rbind(cbind(var_k[velocity_var_config] * diag(2), advec_k[advec_config] * var_k[velocity_var_config] * diag(2)), cbind(advec_k[advec_config] * var_k[velocity_var_config] * diag(2), var_k[velocity_var_config] * diag(2)))
 
-N <- 50
+N <- 20
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
@@ -571,7 +574,7 @@ if(model == 1){
 
 	write.table(r4[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-4-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_rho_config_", rho_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
-}else if(model == 6){
+}else if(model == 7){
 
 
 	PARAMETER_NONSTAT <- PARAMETER_NONSTAT2 <- matrix(0, ncol = 3, nrow = n * TT)
@@ -602,7 +605,7 @@ if(model == 1){
 		cat('Simulating wind values...', '\n')
 
 		set.seed(1234)
-		wind_vals <- mvrnorm(10, WIND_MU, WIND_VAR)
+		wind_vals <- mvrnorm(10, MULTIPLE_WIND_MU, MULTIPLE_WIND_VAR)
 
 		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
 
@@ -615,18 +618,43 @@ if(model == 1){
 
 		stopCluster(cl)
 
-
-
 		cov6 <- matrix(output, n * TT * 2, n * TT * 2) / nrow(wind_vals) 
 
 		cat('Generating realizations...', '\n')
 
 		set.seed(1)
-		r6 <- rmvn(10, rep(0, n * TT * 2), cov3, ncores = number_of_cores_to_use)
+		r6 <- rmvn(10, rep(0, n * TT * 2), cov6, ncores = number_of_cores_to_use)
 
 		cat('Saving the values...', '\n')
 	
 		write.table(cov6[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-6-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_advec_config_", advec_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+	write.table(r6[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-6-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_advec_config_", advec_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+}else if(model == 6){
+
+	config = advec_config
+
+	if(config == 3 | config == 5){
+		VAR_MAT_MARGIN <- 0.1 * matrix(c(1, 0, 0.9, 0, 0, 1, 0, 0.9, 0.9, 0, 1, 0, 0, 0.9, 0, 1), ncol = 4, nrow = 4, byrow = T)
+	}else if(config == 2 | config == 6){
+		VAR_MAT_MARGIN <- 0.1 * matrix(c(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), ncol = 4, nrow = 4, byrow = T)
+	}else if(config == 1 | config == 7){
+		VAR_MAT_MARGIN <- 0.1 * matrix(c(1, 0, -0.9, 0, 0, 1, 0, -0.9, -0.9, 0, 1, 0, 0, -0.9, 0, 1), ncol = 4, nrow = 4, byrow = T)
+	}else{
+		VAR_MAT_MARGIN <- 0.1 * matrix(c(1, 0, 0, 0.5, 0, 1, 0.5, 0, 0, 0.5, 1, 0, 0.5, 0, 0, 1), ncol = 4, nrow = 4, byrow = T)
+	}
+
+		cov6 <- nonfrozen_matern_cov_multi_advec_small_scale(theta = c(1, 1, 0.23, 0.5, 1, 0.5), wind_mu1 = c(0.1, -0.1), wind_mu2 = c(-0.1, 0.1), wind_var1 = VAR_MAT_MARGIN[1:2, 1:2], wind_var2 = VAR_MAT_MARGIN[3:4, 3:4], wind_var12 = VAR_MAT_MARGIN[1:2, 3:4], max_time_lag = TT - 1, LOCS = sim_grid_locations)	
+
+	set.seed(1234)
+
+	r6 <- rmvn(10, rep(0, ncol(cov6)), cov6, ncores = number_of_cores_to_use)
+
+		write.table(cov6[reference_locations, ], file = paste(root, "Data/univariate-nonstationary/cov-example-6-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_advec_config_", advec_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+	write.table(r6[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-6-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_advec_config_", advec_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
 }
 
 end_time <- Sys.time()
