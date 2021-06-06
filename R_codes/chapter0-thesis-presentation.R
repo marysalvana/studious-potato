@@ -133,11 +133,12 @@ REALIZATIONS_MAT <- NULL
 
 for(variable in 1:2){
 	for(rho_config in 1:3){
-		realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_', velocity_mu_config, '_velocity_var_config_', velocity_var_config, "_rho_config_", rho_config, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+		cat(variable, rho_config, '\n')
+		realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-3-velocity_mu_config_', velocity_mu_config, '_velocity_var_config_', velocity_var_config, "_rho_config_", rho_config, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 		REALIZATIONS_MAT <- rbind(REALIZATIONS_MAT, realizations_example[1, (variable - 1) * n * TT + 1:(n * TT)])
 	}
 }
 
-movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov3')
+movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov3', row_labels = c(expression(Z[1]), expression(Z[2])))
 
 

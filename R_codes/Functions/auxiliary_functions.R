@@ -606,14 +606,14 @@ plot_simulated_data_for_beamer <- function(covariance, realizations, locations, 
 }
 
 
-movie_simulated_data_for_beamer <- function(realizations, locations, file_name){
+movie_simulated_data_for_beamer <- function(realizations, locations, file_name, row_labels = c("A", "B")){
 
 	n <- nrow(locations)
 	N <- sqrt(n)
 
 	zlim_range2 <- range(realizations[, 1:(n * 5)])
 
-	mod_labels <- c("I", "II", "III", "A", "B")
+	mod_labels <- c("I", "II", "III", row_labels)
 
 	for(tt in 1:5){
 
