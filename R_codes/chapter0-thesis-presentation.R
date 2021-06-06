@@ -64,7 +64,7 @@ DATA <- data_format(aggregate = 1, area = AREA)
 locs <- as.matrix(DATA[[2]])
 locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(locs[, 2])) / sd(locs[, 2]))
 
-N <- 30
+N <- 50
 n <- N^2
 TT <- 5
 grid_x <- seq(from = min(locs[, 1]), to = max(locs[, 1]), length.out = N)
@@ -116,4 +116,28 @@ for(velocity_mu_config in 1:2){
 }
 
 movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov2')
+
+
+##################################################################################################################################################
+##################################################################################################################################################
+#######################################################  MULTIVARIATE  #######################################################
+##################################################################################################################################################
+##################################################################################################################################################
+
+###########   SPATIALLY VARYING PARAMETERS MODEL   ###########
+
+velocity_mu_config = 2
+velocity_var_config = 1
+
+REALIZATIONS_MAT <- NULL
+
+for(variable in 1:2){
+	for(rho_config in 1:3){
+		realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_', velocity_mu_config, '_velocity_var_config_', velocity_var_config, "_rho_config_", rho_config, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+		REALIZATIONS_MAT <- rbind(REALIZATIONS_MAT, realizations_example[1, (variable - 1) * n * TT + 1:(n * TT)])
+	}
+}
+
+movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov3')
+
 

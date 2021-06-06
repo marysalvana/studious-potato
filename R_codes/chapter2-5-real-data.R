@@ -28,8 +28,9 @@ plot_realdata_for_checking_stationarity(data_list = DATA, file_name = '2-applica
 plot_realdata_for_manuscript(data_list = DATA, file_name = '2-application-saudi-data-scratch.jpg', start_hr = 8760 + 1, saudi = T)
 
 ####################################################################################################
+TT <- 2
 
-
+WIND <- rep(0.1, 2)
 
 NN <- 50
 grid_x <- seq(from = -3, to = 3, length.out = NN)
@@ -58,12 +59,22 @@ l <- Beig$values
 g <- g[,order(l)]
 l <- l[order(l)]
 
-htarg <- as.matrix(dist(rbind(X, locs),diag=TRUE,upper=TRUE))
-htarg <- htarg[1:nn, (nn + 1):(nn + nrow(locs))]
+Xtarg <- locs
+
+if (TT > 1){
+	for (tt in 1:(TT - 1)){
+		temp_locs <- cbind(locs[, 1] - tt * WIND[1], locs[, 2] - tt * WIND[2])
+		Xtarg <- rbind(Xtarg, temp_locs)
+	}
+}
+
+htarg <- as.matrix(dist(rbind(X, Xtarg),diag=TRUE,upper=TRUE))
+htarg <- htarg[1:nn, (nn + 1):(nn + nrow(Xtarg))]
 sigma <- htarg^2 * log(htarg)
 sigma[htarg == 0] <- 0
 
-Z_rand_sample <- matrix(DATA[[1]][8760 * 3 + 1:10, ], nrow = 1)
+Z_rand_sample <- matrix(c(DATA[[1]][1, ], DATA[[1]][2, ]), nrow = 1)
+#Z_rand_sample <- matrix(DATA[[1]][seq(1, 35040, by = 8760), ], nrow = 1)
 
 
 
@@ -81,7 +92,7 @@ NEGLOGLIK_DEFORM <- function(p){
 	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
 		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
 
-	Y <- locs
+	Y <- Xtarg
 	Y[, 1] <- Y[, 1] + c(parWarpsSum[, 1] %*% sigma)
 	Y[, 2] <- Y[, 2] + c(parWarpsSum[, 2] %*% sigma)
 
@@ -96,10 +107,10 @@ NEGLOGLIK_DEFORM <- function(p){
 	return(out)
 }
 
-jWarp = 1:15
+jWarp = 1:10
 init <- c(rep(0, 3), rep(0, 2 * length(jWarp)))
 fit1 <- optim(par = init, fn = NEGLOGLIK_DEFORM, control = list(trace = 5, maxit = 3000)) #
-
+#324
 p <- fit1$par
 
 theta <- exp(p[1:3])
@@ -139,7 +150,7 @@ NEGLOGLIK_SPATIALLY_VARYING <- function(p){
 
 	PARAMETER_NONSTAT <- t(sigma) %*% parWarpsSum
 
-	Sigma <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(theta, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = locs, TIME = 1, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T)
+	Sigma <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(theta, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = locs, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T)
 	cholmat <- t(cholesky(Sigma[['covariance']], parallel = TRUE))
 	z <- forwardsolve(cholmat, t(Z_rand_sample))
 	logsig  <- 2 * sum(log(diag(cholmat))) * nrow(Z_rand_sample)
@@ -148,9 +159,9 @@ NEGLOGLIK_SPATIALLY_VARYING <- function(p){
 	return(out)
 }
 
-jWarp = 1:15
+jWarp = 1:10
 init <- c(rep(0, 3), rep(0, 3 * length(jWarp)))
-fit1 <- optim(par = init, fn = NEGLOGLIK_SPATIALLY_VARYING, control = list(trace = 5, maxit = 10000)) #
+fit1 <- optim(par = init, fn = NEGLOGLIK_SPATIALLY_VARYING, control = list(trace = 5, maxit = 3000)) #
 
 p <- fit1$par
 len_old <- (length(p) - 3) / 3
@@ -182,4 +193,45 @@ dev.off()
 
 
 ####################################################################################################
+
+####################################################################################################
+
+Z_rand_sample <- matrix(c(DATA[[1]][1, ], DATA[[1]][2, ], DATA[[1]][8760 + 1, ], DATA[[1]][8760 + 2, ]), nrow = 1)
+
+NEGLOGLIK_MULTI_SPATIALLY_VARYING <- function(p){
+
+	theta <- exp(p[1:5])
+
+	beta1 <- p[5 + 1:length(jWarp)]
+	beta2 <- p[5 + length(jWarp) + 1:length(jWarp)]
+	beta3 <- p[5 + 2 * length(jWarp) + 1:length(jWarp)]
+  
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta3, ncol=length(beta3), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+			rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+	PARAMETER_NONSTAT <- t(sigma) %*% parWarpsSum
+
+	beta4 <- p[5 + 3 * length(jWarp) + 1:length(jWarp)]
+	beta5 <- p[5 + 3 * length(jWarp) + length(jWarp) + 1:length(jWarp)]
+	beta6 <- p[5 + 3 * length(jWarp) + 2 * length(jWarp) + 1:length(jWarp)]
+  
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta6, ncol=length(beta6), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta5, ncol=length(beta5), nrow=nrow(X), byrow=T)),
+			rowSums( g[,3+jWarp] * matrix(beta4, ncol=length(beta4), nrow=nrow(X), byrow=T)))
+
+	PARAMETER_NONSTAT2 <- t(sigma) %*% parWarpsSum
+
+	Sigma <- MULTIVARIATE_MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(theta, 0.5, WIND, 0.001, 0, 0, 0.001), LOCATION = locs, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, PARAMETER_NONSTAT2 = PARAMETER_NONSTAT2, FITTING = T)
+	cholmat <- t(cholesky(Sigma[['covariance']], parallel = TRUE))
+	z <- forwardsolve(cholmat, t(Z_rand_sample))
+	logsig  <- 2 * sum(log(diag(cholmat))) * nrow(Z_rand_sample)
+	out  <- 1/2 * logsig + 1/2 * sum(z^2)
+
+	return(out)
+}
+
+jWarp = 1:5
+init <- c(rep(0, 5), rep(0, 2 * 3 * length(jWarp)))
+fit1 <- optim(par = init, fn = NEGLOGLIK_MULTI_SPATIALLY_VARYING, control = list(trace = 5, maxit = 3000)) #
 
