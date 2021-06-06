@@ -332,7 +332,8 @@ if(model == 1){
 
 	PARAMETER_NONSTAT <- t(sigma) %*% parWarpsSum
 
-	PARAMETER_NONSTAT2 <- matrix(0, ncol = ncol(PARAMETER_NONSTAT), nrow = nrow(PARAMETER_NONSTAT))
+	PARAMETER_NONSTAT2 <- PARAMETER_NONSTAT
+	#PARAMETER_NONSTAT2 <- matrix(0, ncol = ncol(PARAMETER_NONSTAT), nrow = nrow(PARAMETER_NONSTAT))
 
 
 
@@ -381,7 +382,7 @@ if(model == 1){
 		cat('Simulating wind values...', '\n')
 
 		set.seed(1234)
-		wind_vals <- mvrnorm(100, WIND_MU, WIND_VAR)
+		wind_vals <- mvrnorm(10, WIND_MU, WIND_VAR)
 
 		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
 
@@ -409,7 +410,7 @@ if(model == 1){
 	}
 	write.table(r3[1:10, ], file = paste(root, "Data/univariate-nonstationary/realizations-example-3-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, "_rho_config_", rho_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
-}else if(model == 4){
+}else if(model == 5){
 
 		output <- foreach(i=1:nrow(wind_vals), .combine=cbind, .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
 			
