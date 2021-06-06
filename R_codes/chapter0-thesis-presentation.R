@@ -91,10 +91,29 @@ plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizat
 
 ###########   SPATIALLY VARYING PARAMETERS MODEL   ###########
 
-cov_example <- read.table(paste(root, 'Data/univariate-nonstationary/cov-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
-realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+REALIZATIONS_MAT <- NULL
 
-movie_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov1')
+for(velocity_mu_config in 1:2){
+	for(velocity_var_config in 1:3){
+		realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-1-velocity_mu_config_', velocity_mu_config, '_velocity_var_config_', velocity_var_config, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+		REALIZATIONS_MAT <- rbind(REALIZATIONS_MAT, realizations_example[1, ])
+	}
+}
+
+movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov1')
 
 
+###########    DEFORMATION MODEL   ###########
+
+
+REALIZATIONS_MAT <- NULL
+
+for(velocity_mu_config in 1:2){
+	for(velocity_var_config in 1:3){
+		realizations_example <- read.table(paste(root, 'Data/univariate-nonstationary/realizations-example-2-velocity_mu_config_', velocity_mu_config, '_velocity_var_config_', velocity_var_config, sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+		REALIZATIONS_MAT <- rbind(REALIZATIONS_MAT, realizations_example[1, ])
+	}
+}
+
+movie_simulated_data_for_beamer(realizations = REALIZATIONS_MAT, locations = sim_grid_locations, file_name = '0-univariate-nonstationary-cov2')
 
