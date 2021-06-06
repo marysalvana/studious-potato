@@ -823,7 +823,7 @@ NumericMatrix MULTIVARIATE_DEFORMATION_FOR_FITTING_PARALLEL(NumericMatrix & Loc,
 	NumericMatrix cor11(m, m), cor22(m, m), cor12(m, m), cor21(m, m);
   
   	for (int i = 0; i < m; ++i) {
-    		for (int j = 0; j <= i; ++j) {
+    		for (int j = 0; j < m; ++j) {
  
         		double temp_val11 = 0.0, temp_val22 = 0.0, temp_val12 = 0.0;
 
