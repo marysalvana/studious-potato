@@ -107,7 +107,7 @@ NEGLOGLIK_DEFORM <- function(p){
 	return(out)
 }
 
-jWarp = 1:10
+jWarp = 1:5
 init <- c(rep(0, 3), rep(0, 2 * length(jWarp)))
 fit1 <- optim(par = init, fn = NEGLOGLIK_DEFORM, control = list(trace = 5, maxit = 3000)) #
 #324
@@ -132,6 +132,50 @@ plot(cbind(c(parWarpsSum[, 1] %*% sigma), c(parWarpsSum[, 2] %*% sigma)), pch = 
 
 dev.off()
 
+####################################################################################################
+
+
+
+NEGLOGLIK_DEFORM <- function(p){
+
+	theta <- exp(p[1:3])
+
+	beta1 <- p[3 + 1:length(jWarp)]
+	beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
+  
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+	Y1 <- Xtarg
+	Y1[, 1] <- Y1[, 1] + c(parWarpsSum[, 1] %*% sigma)
+	Y1[, 2] <- Y1[, 2] + c(parWarpsSum[, 2] %*% sigma)
+
+	beta1 <- p[3 + 2 * length(jWarp) + 1:length(jWarp)]
+	beta2 <- p[3 + 3 * length(jWarp) + 1:length(jWarp)]
+  
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+	Y2 <- Xtarg
+	Y2[, 1] <- Y2[, 1] + c(parWarpsSum[, 1] %*% sigma)
+	Y2[, 2] <- Y2[, 2] + c(parWarpsSum[, 2] %*% sigma)
+
+	Y <- rbind(Y1[1:550, ], Y2[550 + 1:550, ])
+
+	dist0 <- as.matrix(dist(Y, diag = TRUE, upper = TRUE))	
+
+	Sigma <- theta[1] * Matern(dist0, range = theta[2], nu = theta[3])
+	cholmat <- t(cholesky(Sigma, parallel = TRUE))
+	z <- forwardsolve(cholmat, t(Z_rand_sample))
+	logsig  <- 2 * sum(log(diag(cholmat))) * nrow(Z_rand_sample)
+	out  <- 1/2 * logsig + 1/2 * sum(z^2)
+
+	return(out)
+}
+
+jWarp = 1:5
+init <- c(rep(0, 3), rep(0, 4 * length(jWarp)))
+fit1 <- optim(par = init, fn = NEGLOGLIK_DEFORM, control = list(trace = 5, maxit = 3000)) #
 
 ####################################################################################################
 
