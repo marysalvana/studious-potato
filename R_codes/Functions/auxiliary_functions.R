@@ -684,7 +684,7 @@ plot_univariate_nonstationary_covariance_heatmap <- function(covariance, covaria
 
 	for(tt in 1:3){
 		
-		screen(3 + hr_count)
+		screen(3 + tt)
 
 		par(pty = 's')
 		par(mai=c(0.2,0.2,0.2,0.2))
@@ -701,7 +701,7 @@ plot_univariate_nonstationary_covariance_heatmap <- function(covariance, covaria
 
 	for(tt in 1:1){
 		
-		screen(6 + hr_count)
+		screen(6 + tt)
 
 		par(pty = 's')
 		par(mai=c(0.2,0.2,0.2,0.2))
