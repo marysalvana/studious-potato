@@ -18,13 +18,8 @@ chapter2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 
 ## Codes
 
-chapter0-thesis-presentation-plots.R -- codes to plot figures for thesis defense presentation beamer
-<br> ![#1589F0] chapter0-thesis-presentation.R -- codes to produce covariance and realizations for thesis defense presentation
-- ![#f03c15] `chapter0-thesis-presentation.R`
-- <span style="color: green"> chapter0-thesis-presentation.R </span>
-- ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) `#1589F0`
-- <span style="color:blue">some *blue* text</span>
-- $\color{#1589F0}{your-text-here}$
+- chapter0-thesis-presentation-plots.R -- codes to plot figures for thesis defense presentation beamer
+- chapter0-thesis-presentation.R -- codes to produce covariance and realizations for thesis defense presentation
 
 ## Packages
 
