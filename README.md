@@ -1,13 +1,21 @@
 # studious-potato
 consolidated thesis files
 
-## Table of Contents
-Chapter 1 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
-<br> Chapter 2 - Lagrangian Spatio-Temporal Nonstationary Cross-Covariance Function
-<br> Chapter 3 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple Advections
-<br> Chapter 4 - Multivariate Nonstationary Taylor's Hypothesis
-<br> Chapter 5 - Multivariate ExaGeoStat
-<br> Chapter 6 - Spatio-Temporal ExaGeoStat
+## Table of Contents in Dissertation
+ Chapter 1 - Introduction
+<br> Chapter 2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
+<br> Chapter 3 - Lagrangian Spatio-Temporal Nonstationary Cross-Covariance Function
+<br> Chapter 4 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple Advections
+<br> Chapter 5 - Multivariate Nonstationary Taylor's Hypothesis, Multivariate ExaGeoStat, and Spatio-Temporal ExaGeoStat
+
+## Table of Contents in Codes
+2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
+<br> 3 - Lagrangian Spatio-Temporal Nonstationary Cross-Covariance Function
+<br> 4 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple Advections
+<br> 5 - Multivariate Nonstationary Taylor's Hypothesis
+<br> 6 - Multivariate ExaGeoStat
+<br> 7 - Spatio-Temporal ExaGeoStat
+
 
 ## Packages
 

@@ -4,7 +4,7 @@ if(workstation){
 	directory <- '/home/salvanmo/Desktop/'
 	root <- paste(directory, 'studious-potato/', sep = '')
 	source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
-	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
+	#sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 	number_of_cores_to_use = 24
 
 	model = 6
@@ -18,7 +18,6 @@ if(workstation){
 	directory <- '/ibex/scratch/salvanmo/'
 	root <- paste(directory, 'studious-potato/', sep = '')
 	source(file = paste(root, "R_codes/Functions/load_packages-IBEX.R", sep = ''))
-	sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp",sep=''))
 	number_of_cores_to_use = 39
 
 	args <- commandArgs(trailingOnly = TRUE)
@@ -33,6 +32,7 @@ if(workstation){
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
+sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp",sep=''))
 
 start_time <- Sys.time()
 
