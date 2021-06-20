@@ -9,9 +9,6 @@ if(workstation){
 	model = 1
 	velocity_mu_config = 2
 	velocity_var_config = 1
-	rho_config = 3
-	lmc_config = 1
-	advec_config = 1
 
 }else{
 	directory <- '/ibex/scratch/salvanmo/'
@@ -24,9 +21,6 @@ if(workstation){
 	model = as.numeric(args[1])
 	velocity_mu_config = as.numeric(args[2])
 	velocity_var_config = as.numeric(args[3])
-	rho_config = as.numeric(args[4])
-	lmc_config = as.numeric(args[5])
-	advec_config = as.numeric(args[6])
 }
 
 source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
@@ -41,6 +35,8 @@ start_time <- Sys.time()
 
 distributed = T
 
+PLOT = F
+
 
 
 AREA <- 'SAUDI'
@@ -54,7 +50,6 @@ locs <- cbind((locs[, 1] - mean(locs[, 1])) / sd(locs[, 1]), (locs[, 2] - mean(l
 #######################################################################################
 
 cat("model:", model, "velocity_mu_config", velocity_mu_config, "velocity_var_config", velocity_var_config, '\n')
-cat("lmc_config", lmc_config, '\n')
 
 
 
@@ -64,12 +59,6 @@ var_k <- c(0.001, 0.1, 1)
 WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
 WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 
-rho_k <- c(-0.5, 0, 0.5)
-VARIABLE_RHO <- rho_k[rho_config]
-
-advec_k <- c(-0.8, 0, 0.8)
-MULTIPLE_WIND_MU <- c(WIND_MU, WIND_MU)
-MULTIPLE_WIND_VAR <- rbind(cbind(var_k[velocity_var_config] * diag(2), advec_k[advec_config] * var_k[velocity_var_config] * diag(2)), cbind(advec_k[advec_config] * var_k[velocity_var_config] * diag(2), var_k[velocity_var_config] * diag(2)))
 
 N <- 20
 n <- N^2
@@ -317,4 +306,50 @@ end_time <- Sys.time()
 cat('DONE.', '\n')
 cat("Textfiles are saved in ", paste(root, 'Data/nonstationary-taylor-hypothesis/', sep = ''), '\n')
 cat(end_time - start_time, 'seconds', '\n')
+
+
+
+if(PLOT){
+
+	cat('PLOTTING COVARIANCE . . . ', '\n')
+
+	Ref_loc <- c(2 * N + 5, ceiling(n / 2) + ceiling(N / 2))
+
+
+
+	if(model == 1){
+
+
+
+		###########   SPATIALLY VARYING PARAMETERS MODEL   ###########
+
+
+
+		cov_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/cov-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+		realizations_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/realizations-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+
+		plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-univariate-nonstationary-cov1-heatmap.jpg')
+
+
+
+	}else if(model == 2){
+
+
+
+	###########    DEFORMATION MODEL   ###########
+
+
+
+		cov_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/cov-example-2-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+		realizations_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/realizations-example-2-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+
+		plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-univariate-nonstationary-cov2-heatmap.jpg')
+
+
+
+	}
+
+
+
+}
 
