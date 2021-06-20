@@ -6,13 +6,13 @@ consolidated thesis files
 <br> Chapter 2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 <br> Chapter 3 - Lagrangian Spatio-Temporal Nonstationary Cross-Covariance Function
 <br> Chapter 4 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple Advections
-<br> Chapter 5 - Multivariate Nonstationary Taylor's Hypothesis, Multivariate ExaGeoStat, and Spatio-Temporal ExaGeoStat
+<br> Chapter 5 - Nonstationary Taylor's Hypothesis, Multivariate ExaGeoStat, and Spatio-Temporal ExaGeoStat
 
 ## Table of Contents in Codes
 chapter2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 <br> chapter3 - Lagrangian Spatio-Temporal Nonstationary Cross-Covariance Function
 <br> chapter4 - Lagrangian Spatio-Temporal Cross-Covariance Function with Multiple Advections
-<br> chapter5 - Multivariate Nonstationary Taylor's Hypothesis
+<br> chapter5 - Nonstationary Taylor's Hypothesis
 <br> chapter6 - Multivariate ExaGeoStat
 <br> chapter7 - Spatio-Temporal ExaGeoStat
 
@@ -20,6 +20,8 @@ chapter2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 
 - chapter0-thesis-presentation-plots.R -- codes to plot figures for thesis defense presentation beamer
 - chapter0-thesis-presentation.R -- codes to produce covariance and realizations for thesis defense presentation
+<br> <br>
+- chapter5-3.R -- codes for simulating Lagrangian nonstationary covariance (spatially varying and deformation models) and fitting the thin plate spline for nonparametric estimation of the empirical spatio-temporal covariance
 
 ## Packages
 
