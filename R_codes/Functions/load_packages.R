@@ -34,5 +34,5 @@ library(optimParallel)
 library(Rfast)
 library(fields)
 library(fda)
-
+library(future.apply)
 

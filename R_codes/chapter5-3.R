@@ -28,13 +28,18 @@ source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp",sep=''))
 
 
+source(file = paste(root, "R_codes/Functions/cls.r", sep = ''))
+sourceCpp(file = paste(root, "R_codes/Functions/distR.cpp",sep=''))
+
+
 
 start_time <- Sys.time()
 
 
 
 SIMULATE = F
-PLOT = T
+PLOT = F
+NONPARAMETRIC_ESTIMATION = T
 
 
 
@@ -312,6 +317,122 @@ if(SIMULATE){
 
 }
 
+if(NONPARAMETRIC_ESTIMATION){
+
+	locs1 <- sim_grid_locations
+
+	dist1<-as.matrix(dist(locs1))
+	A <- 1:nrow(locs1)
+
+	####################################################
+	#### function for finding alpha_l in stationary process W_l
+	####################################################
+
+	find.alpha<-function(Adist,ASig.em,p){
+		A.length<-dim(Adist)[1]
+		alpha.all<-NULL
+		for(i in 1:A.length){
+			for(j in i:A.length){
+				cat(i / A.length, ', ', j / A.length, '\n')	
+				if (is.na(ASig.em[i,j])==0 & ASig.em[i,j]>0) al.temp<-(-Adist[i,j]/log(ASig.em[i,j]/sqrt(ASig.em[i,i]*ASig.em[j,j])))
+		    else  al.temp<-NA
+				alpha.all<-c(alpha.all,al.temp)
+				
+			}
+		}
+		alpha.all<-alpha.all[is.na(alpha.all)==0]
+		alpha.set<-as.numeric(quantile(alpha.all,p))
+		return(alpha.set)
+	}
+
+	#####################################################
+	#### Gaussian kernal
+	#####################################################
+
+	#sd.set<-c(1:4)/8
+	sd.set<- seq(0.08, 0.5, length.out = 5)
+	nu.set <- c(0.5, 1, 1.5)
+	gg<-NULL
+	loc.mu<-NULL
+	shift <- 0
+	for(nu_val in 1:length(nu.set)){
+		shift <- shift + 0.2
+		for(i in 1:length(sd.set)){
+			vari<-sd.set[i]^2
+			loc.mui<-NULL
+			mu.m<-sd.set[i]
+			hex.nx<-floor((1+1.5*mu.m)/mu.m)
+			hex.ny<-floor((1+mu.m*sqrt(3)/2)/(mu.m*sqrt(3)/2))
+			anchor_locs <- expand.grid(-1:(hex.ny), -1:(hex.nx)) %>% as.matrix()
+			loc.jk <- cbind(mu.m * (anchor_locs[, 2] + (anchor_locs[, 1] %% 2) / 2) + shift, mu.m * anchor_locs[, 1] * sqrt(3)/2 + shift)
+			loc.mui <- cbind(rep(sd.set[i], nrow(loc.jk)), loc.jk)
+			temp.g <- distR_C(loc.jk, locs1)
+			temp.g<- Matern(temp.g, range = vari, nu = nu.set[nu_val])
+			gg<-rbind(gg,temp.g)
+			loc.mu<-rbind(loc.mu,loc.mui)
+		}
+	}
+
+	####################################################
+	#### Gaussian kernal matrix for Lasso
+	####################################################
+
+	AM<-gg[,A]
+	k<-dim(AM)[1]
+	a<-dim(AM)[2]
+	si.fix<-NULL
+	si.temp1<-matrix(as.numeric(outer(c(1:a),c(1:a),"==")),a,a)
+	si.temp2<-NULL
+	si.temp3 <- matrix(1:(a^2), a, a)
+	si.temp4<-NULL
+	for(s in 1:a){
+		cat('s = ', s/a, '\n')	
+		si.temp2<-c(si.temp2,si.temp1[s:a,s])
+		si.temp4<-c(si.temp4,si.temp3[s:a,s])
+
+	}
+	si.fix<-cbind(si.fix,si.temp2)
+
+	si.fix_new <- future_apply(AM, 1, function(x) x %o% x )
+	si.fix <- cbind(si.fix, si.fix_new[si.temp4, ])
+	si.dim<-dim(si.fix)
+	si <- si.fix<-matrix(as.numeric(si.fix),si.dim[1],si.dim[2])
+
+	Sig.em<-cov1[1:n, 1:n]
+
+	AY.lars<-NULL
+	loc.y<-NULL
+	for(i in 1:length(A)){
+			cat('i = ', i/length(A), '\n')	
+			AY.lars<-c(AY.lars,Sig.em[(i:a),i])
+			loc.y<-rbind(loc.y,cbind(rep(i,(a-i+1)),c(i:a)))
+		}
+	id.train<-c(1:length(AY.lars))[is.na(AY.lars)==0]
+
+	###############################################
+	#### CLS
+	###############################################
+	si.re<-si[id.train,]
+	BY.lars<-cbind(loc.y[id.train,],AY.lars[id.train])
+	test1<-larspositive(si.re,AY.lars[id.train],type="lasso")
+	temp1<-cv.lars.positive(si.re,BY.lars)
+	s.temp<-temp1$fraction[which.min(temp1$cv)]
+	pre1<-predict.larspositive(test1,s=s.temp,type="coefficient", mode="fraction")$coefficients
+
+	#The estimates might be different from those reported in the paper due to the CV method 
+	#randomly partition the points into K-folds. 
+	#If you want to get the same estimates as those in our paper, 
+	#please set s.temp<-0.5050505.
+
+
+	####est. Sigma by CLS
+	M<-gg
+	M.n<-dim(gg)[1]
+	Sig.CLS <- (t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) +diag(pre1[1],n)
+
+}
+
+
 if(PLOT){
 
 	cat('PLOTTING COVARIANCE . . . ', '\n')
@@ -329,9 +450,8 @@ if(PLOT){
 
 
 		cov_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/cov-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
-		realizations_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/realizations-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
-		plot_univariate_nonstationary_covariance_heatmap(covariance = cov_example, locations = sim_grid_locations, reference_locations = Ref_loc, '5-nonstationary-cov1-heatmap-nonparametric-estimation.pdf')
+		plot_univariate_nonstationary_covariance_heatmap(covariance = cov_example, covariance_est = Sig.CLS[reference_locations, ], locations = sim_grid_locations, reference_locations = Ref_loc, '5-nonstationary-cov1-heatmap-nonparametric-estimation.pdf')
 
 
 
@@ -344,9 +464,8 @@ if(PLOT){
 
 
 		cov_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/cov-example-2-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
-		realizations_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/realizations-example-2-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
-		plot_univariate_nonstationary_covariance_heatmap(covariance = cov_example, locations = sim_grid_locations, reference_locations = Ref_loc, '5-nonstationary-cov2-heatmap-nonparametric-estimation.pdf')
+		plot_univariate_nonstationary_covariance_heatmap(covariance = cov_example, covariance_est = Sig.CLS[reference_locations, ], locations = sim_grid_locations, reference_locations = Ref_loc, '5-nonstationary-cov2-heatmap-nonparametric-estimation.pdf')
 
 
 

@@ -117,7 +117,7 @@ si.fix <- cbind(si.fix, si.fix_new[si.temp4, ])
 si.dim<-dim(si.fix)
 si <- si.fix<-matrix(as.numeric(si.fix),si.dim[1],si.dim[2])
 
-Sig.em<-cov1[[1]]
+Sig.em<-cov1[[1]][1:n, 1:n]
 
 AY.lars<-NULL
 loc.y<-NULL
