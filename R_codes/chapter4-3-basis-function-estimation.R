@@ -31,13 +31,13 @@ cat('Computing covariances...', '\n')
 cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT)
 
 set.seed(1)
-r1 <- rmvn(500, rep(0, ncol(cov1)), cov1, ncores = 25)
+r1 <- rmvn(500, rep(0, ncol(cov1[[1]])), cov1[[1]], ncores = 25)
 
 emp_cov <- cov(r1)
 
 ########  CHANG HSU
 
-source(file = paste(root, "R_codes/cls.r", sep = ''))
+source(file = paste(root, "R_codes/Functions/cls.r", sep = ''))
 
 loc1 <- sim_grid_locations
 dist1<-as.matrix(dist(loc1))
@@ -117,7 +117,7 @@ si.fix <- cbind(si.fix, si.fix_new[si.temp4, ])
 si.dim<-dim(si.fix)
 si <- si.fix<-matrix(as.numeric(si.fix),si.dim[1],si.dim[2])
 
-Sig.em<-cov1
+Sig.em<-cov1[[1]]
 
 AY.lars<-NULL
 loc.y<-NULL
@@ -358,7 +358,6 @@ Sig.CLS <-(t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) +diag(pre1[1],n * TT)
 #########################   TESTING   ########################
 
 cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, 0.1001, 0.1001, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT)
-cov2 <- Sig.CLS
 
 set.seed(1234)
 r1 <- mvrnorm(500, rep(0, ncol(cov1)), cov1)
@@ -367,14 +366,14 @@ r2 <- mvrnorm(500, rep(0, ncol(Sig.CLS)), Sig.CLS)
 set.seed(5678)
 r3 <- mvrnorm(500, rep(0, ncol(Sig.CLS)), Sig.CLS)
 
-EMPCOV <- array(, dim = c(dim(cov1), 2))
+EMPCOV <- array(, dim = c(dim(cov1), 3))
 
 EMPCOV[, , 1] <- cov(r1)
 EMPCOV[, , 2] <- cov(r2)
 EMPCOV[, , 3] <- cov(r3)
 
-adj_mu <- 0.1001
-adj_sig <- 0.001
+adj_mu <- c(0.1001, 0.2001, 0)
+adj_sig <- c(0.001, 0.001, 0.001)
 
 
 locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
@@ -423,3 +422,9 @@ g <- t(DIFF_ARRAY_EMP[, , 1, 3])
 rank.value=rankTest(dataX, g, dataRef)
 rank.value
 
+dataX <- t(DIFF_ARRAY_EMP[, , 1, 1])
+dataRef <- t(DIFF_ARRAY_EMP[, , 1, 2])
+g <- t(DIFF_ARRAY_EMP[, , 3, 3])
+
+rank.value=rankTest(dataX, g, dataRef)
+rank.value
