@@ -33,7 +33,7 @@ start_time <- Sys.time()
 
 
 
-SIMULATE = T
+SIMULATE = F
 PLOT = T
 
 

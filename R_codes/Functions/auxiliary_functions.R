@@ -693,7 +693,7 @@ plot_univariate_nonstationary_covariance_heatmap <- function(covariance, locatio
 		par(pty = 's')
 		par(mai=c(0.2,0.2,0.2,0.2))
 		
-		quilt.plot(locations[, 1], locations[, 2], covariance[1, (tt - 1) * n + 1:n], zlim = zlim_range1, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, yaxt = 'n', xaxt = 'n')
+		quilt.plot(locations[, 1], locations[, 2], covariance[2, (tt - 1) * n + 1:n], zlim = zlim_range1, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, yaxt = 'n', xaxt = 'n')
 		points(matrix(locations[reference_locations[2], ], ncol = 2), col = 'black', pch = 4, cex = 3, lwd = 4)
 		mtext(paste('t = ', tt, sep = ''), side = 3, line = 1, adj = 0.5, cex = 2, font = 2)
 		
