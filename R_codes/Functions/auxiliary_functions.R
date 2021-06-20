@@ -666,3 +666,54 @@ movie_simulated_data_for_beamer <- function(realizations, locations, file_name, 
 
 	}
 }
+
+
+plot_univariate_nonstationary_covariance_heatmap <- function(covariance, locations, file_name, reference_locations){
+
+	n <- nrow(locations)
+	N <- sqrt(n)
+
+	zlim_range1 <- c(0, 1)
+
+	pdf(file = paste(root, 'Figures/', file_name, sep = ''), width = 30, height = 11)
+
+	split.screen( rbind(c(0.05,0.48,0.06,0.88), c(0.52,0.95,0.06,0.88), c(0.96,0.99,0.06,0.88)))
+	split.screen( figs = c( 2, 3 ), screen = 1 )
+	split.screen( figs = c( 2, 3 ), screen = 2 ) 
+
+
+	hr_count <- 0
+
+	for(tt in 1:3){
+		
+		hr_count <- hr_count + 1
+		
+		screen(3 + hr_count)
+
+		par(pty = 's')
+		par(mai=c(0.2,0.2,0.2,0.2))
+		
+		quilt.plot(locations[, 1], locations[, 2], covariance[1, (tt - 1) * n + 1:n], zlim = zlim_range1, nx = N, ny = N, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 1, yaxt = 'n', xaxt = 'n')
+		points(matrix(locations[reference_locations[1], ], ncol = 2), col = 'black', pch = 4, cex = 3, lwd = 4)
+		mtext(paste('t = ', tt, sep = ''), side = 3, line = 1, adj = 0.5, cex = 2, font = 2)
+		
+		if(tt == 1){
+			axis(2, at = seq(min(locations[, 2]), max(locations[, 2]), length.out = 5), labels = seq(0, 1, length.out = 5), cex.axis = 1)
+		}
+
+	}	
+
+	screen(3)
+
+	x1 <- c(0.025,0.1,0.1,0.025) + 0.1
+	y1 <- c(0.17,0.17,0.45,0.45)
+	legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(0, 1, length.out = 3), 1), CEX = 1.5)
+
+	close.screen( all=TRUE)
+	dev.off()
+
+	cat("Check image in ", paste(root, 'Figures/', file_name, sep = ''), '\n')
+
+}
+
+

@@ -35,7 +35,7 @@ start_time <- Sys.time()
 
 distributed = T
 
-PLOT = F
+PLOT = T
 
 
 
@@ -328,7 +328,7 @@ if(PLOT){
 		cov_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/cov-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 		realizations_example <- read.table(paste(root, 'Data/nonstationary-taylor-hypothesis/realizations-example-1-velocity_mu_config_2_velocity_var_config_1', sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
-		plot_simulated_data_for_beamer(covariance = cov_example, realizations = realizations_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-univariate-nonstationary-cov1-heatmap.jpg')
+		plot_univariate_nonstationary_covariance_heatmap(covariance = cov_example, locations = sim_grid_locations, reference_locations = Ref_loc, '0-univariate-nonstationary-cov1-heatmap.jpg')
 
 
 
