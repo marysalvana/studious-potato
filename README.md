@@ -23,6 +23,7 @@ chapter0-thesis-presentation-plots.R -- codes to plot figures for thesis defense
 - ![#f03c15] `chapter0-thesis-presentation.R`
 - <span style="color: green"> chapter0-thesis-presentation.R </span>
 - ![#1589F0](https://via.placeholder.com/15/1589F0/000000?text=+) `#1589F0`
+- <span style="color:blue">some *blue* text</span>
 
 ## Packages
 
