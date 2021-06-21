@@ -12,7 +12,7 @@ source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
 sourceCpp(file=paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 sourceCpp(file=paste(root, "R_codes/Functions/distR.cpp",sep=''))
 
-N <- 20
+N <- 30 #20
 n <- N^2
 TT <- 5
 grid_x <- seq(from = 0, to = 1, length.out = N)
@@ -30,7 +30,6 @@ cat('Computing covariances...', '\n')
 wind_mu <- c(0.05263158, 0.05263158)
 wind_sigma <- c(0.01, 0, 0, 0.01)
 n_sim = 500
-
 
 cov1 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, N_SIM = n_sim)
 
@@ -53,7 +52,11 @@ THEOCOV[, , 2] <- cov2
 adj_mu <- c(0, 0, 0, 0.05)
 adj_sig <- c(1, 0.1, 5, 1)
 
-DIFF_ARRAY_EMP <- DIFF_ARRAY_THEO <- array(, dim = c(100, TT - 1, 4, 2))
+
+locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
+locs_sub_length <- length(locs_sub_index)
+
+DIFF_ARRAY_EMP <- DIFF_ARRAY_THEO <- array(, dim = c(locs_sub_length, TT - 1, length(adj_mu), 2))
 
 for(model in 1:2){
 
@@ -64,10 +67,6 @@ for(model in 1:2){
 
 		set.seed(1234)
 		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = wind_mu + adj_mu[m], Sigma = matrix(wind_sigma * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
-
-		locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
-
-		locs_sub_length <- length(locs_sub_index)
 
 		count <- 1
 		diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
@@ -112,7 +111,7 @@ mod_label <- c('A', 'B')
 
 for(model in 1:2){
 
-	for(m in 1:(TT - 1)){
+	for(m in 1:length(adj_mu)){
 	
 		screen((model - 1) * 4 + 2 + m)
 		par(mai=c(0.2,0.2,0.2,0.2))
@@ -150,7 +149,7 @@ mod_label <- c('A', 'B')
 
 for(model in 1:2){
 
-	for(m in 1:(TT - 1)){
+	for(m in 1:length(adj_mu)){
 	
 		screen((model - 1) * 4 + 2 + m)
 		par(mai=c(0.2,0.2,0.2,0.2))
