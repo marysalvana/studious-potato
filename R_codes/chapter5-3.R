@@ -27,8 +27,6 @@ source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
 source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2-IBEX.cpp",sep=''))
 
-
-source(file = paste(root, "R_codes/Functions/cls.r", sep = ''))
 sourceCpp(file = paste(root, "R_codes/Functions/distR.cpp",sep=''))
 
 
@@ -319,170 +317,50 @@ if(SIMULATE){
 
 if(NONPARAMETRIC_ESTIMATION){
 
-	locs1 <- sim_grid_locations
-
-	dist1<-as.matrix(dist(locs1))
-	A <- 1:nrow(locs1)
-
-	####################################################
-	#### function for finding alpha_l in stationary process W_l
-	####################################################
-
-	find.alpha<-function(Adist,ASig.em,p){
-		A.length<-dim(Adist)[1]
-		alpha.all<-NULL
-		for(i in 1:A.length){
-			for(j in i:A.length){
-				cat(i / A.length, ', ', j / A.length, '\n')	
-				if (is.na(ASig.em[i,j])==0 & ASig.em[i,j]>0) al.temp<-(-Adist[i,j]/log(ASig.em[i,j]/sqrt(ASig.em[i,i]*ASig.em[j,j])))
-		    else  al.temp<-NA
-				alpha.all<-c(alpha.all,al.temp)
-				
-			}
-		}
-		alpha.all<-alpha.all[is.na(alpha.all)==0]
-		alpha.set<-as.numeric(quantile(alpha.all,p))
-		return(alpha.set)
-	}
-
-	#####################################################
-	#### Gaussian kernal
-	#####################################################
-
-	#sd.set<-c(1:4)/8
-	sd.set<- seq(0.08, 0.5, length.out = 5)
-	nu.set <- c(0.5, 1, 1.5)
-	gg<-NULL
-	loc.mu<-NULL
-	shift <- 0
-	for(nu_val in 1:length(nu.set)){
-		shift <- shift + 0.2
-		for(i in 1:length(sd.set)){
-			vari<-sd.set[i]^2
-			loc.mui<-NULL
-			mu.m<-sd.set[i]
-			hex.nx<-floor((1+1.5*mu.m)/mu.m)
-			hex.ny<-floor((1+mu.m*sqrt(3)/2)/(mu.m*sqrt(3)/2))
-			anchor_locs <- expand.grid(-1:(hex.ny), -1:(hex.nx)) %>% as.matrix()
-			loc.jk <- cbind(mu.m * (anchor_locs[, 2] + (anchor_locs[, 1] %% 2) / 2) + shift, mu.m * anchor_locs[, 1] * sqrt(3)/2 + shift)
-			loc.mui <- cbind(rep(sd.set[i], nrow(loc.jk)), loc.jk)
-			temp.g <- distR_C(loc.jk, locs1)
-			temp.g<- Matern(temp.g, range = vari, nu = nu.set[nu_val])
-			gg<-rbind(gg,temp.g)
-			loc.mu<-rbind(loc.mu,loc.mui)
-		}
-	}
-
-	####################################################
-	#### Gaussian kernal matrix for Lasso
-	####################################################
-
-	AM<-gg[,A]
-	k<-dim(AM)[1]
-	a<-dim(AM)[2]
-	si.fix<-NULL
-	si.temp1<-matrix(as.numeric(outer(c(1:a),c(1:a),"==")),a,a)
-	si.temp2<-NULL
-	si.temp3 <- matrix(1:(a^2), a, a)
-	si.temp4<-NULL
-	for(s in 1:a){
-		cat('s = ', s/a, '\n')	
-		si.temp2<-c(si.temp2,si.temp1[s:a,s])
-		si.temp4<-c(si.temp4,si.temp3[s:a,s])
-
-	}
-	si.fix<-cbind(si.fix,si.temp2)
-
-	si.fix_new <- future_apply(AM, 1, function(x) x %o% x )
-	si.fix <- cbind(si.fix, si.fix_new[si.temp4, ])
-	si.dim<-dim(si.fix)
-	si <- si.fix<-matrix(as.numeric(si.fix),si.dim[1],si.dim[2])
-
-	Sig.em<-cov1[1:n, 1:n]
-
-	AY.lars<-NULL
-	loc.y<-NULL
-	for(i in 1:length(A)){
-			cat('i = ', i/length(A), '\n')	
-			AY.lars<-c(AY.lars,Sig.em[(i:a),i])
-			loc.y<-rbind(loc.y,cbind(rep(i,(a-i+1)),c(i:a)))
-		}
-	id.train<-c(1:length(AY.lars))[is.na(AY.lars)==0]
-
-	###############################################
-	#### CLS
-	###############################################
-	si.re<-si[id.train,]
-	BY.lars<-cbind(loc.y[id.train,],AY.lars[id.train])
-	test1<-larspositive(si.re,AY.lars[id.train],type="lasso")
-	temp1<-cv.lars.positive(si.re,BY.lars)
-	s.temp<-temp1$fraction[which.min(temp1$cv)]
-	pre1<-predict.larspositive(test1,s=s.temp,type="coefficient", mode="fraction")$coefficients
-
-	#The estimates might be different from those reported in the paper due to the CV method 
-	#randomly partition the points into K-folds. 
-	#If you want to get the same estimates as those in our paper, 
-	#please set s.temp<-0.5050505.
 
 
-	####est. Sigma by CLS
-	M<-gg
-	M.n<-dim(gg)[1]
-	Sig.CLS <- (t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) +diag(pre1[1],n)
+	locs_sub_index <- which(sim_grid_locations[, 1] >= -1 & sim_grid_locations[, 1] <= 1 & sim_grid_locations[, 2] >= -1 & sim_grid_locations[, 2] <= 1)
+	locs_sub_length <- length(locs_sub_index)
 
-
-	############################################################################################################
-
-	Xtarg <- sim_grid_locations 
-
-	htarg <- as.matrix(dist(rbind(X, Xtarg),diag=TRUE,upper=TRUE))
-	htarg <- htarg[1:nn, (nn + 1):(nn + nrow(Xtarg))]
-	sigma <- htarg^2 * log(htarg)
-	sigma[htarg == 0] <- 0
-
-	EMP_COV <- cov1[1:n, 1:n]
+	n_sim = 100
+	empcov <- cov1
 
 	NEGLOGLIK_NONPARAMETRIC <- function(p){
 
-		beta1 <- p
-	  
-		parWarpsSum <- matrix(rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)), ncol = 1)
+		wind_mu <- p[1:2]
 
-		Y <- exp(c(parWarpsSum[, 1] %*% sigma))
+		wind_var_chol <- matrix(c(p[3], p[4], 0, p[5]), ncol = 2, byrow = T)
+        	wind_var <- t(wind_var_chol) %*% wind_var_chol
 
-		Y1 <- Y %*% t(Y)
 
-		out <- sum((EMP_COV[1:7, ] - Y1[1:7, ])^2)
+		set.seed(1234)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = wind_mu, Sigma = wind_var_chol), ncol = 2, byrow = T)
 
-		return(out)
+		diff_cov_emp <- 0
+
+		for(l2 in locs_sub_index){
+			for(t2 in 1:(TT - 1)){
+				cov_purely_time_emp <- empcov[l2, l2 + n * t2]
+				cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
+				for(k in 1:n_sim){
+					wind <- WIND_SIMULATED[k, ]
+					new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
+					find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+
+					cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+				}
+				cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
+				diff_cov_emp <- diff_cov_emp + (cov_purely_time_emp - cov_purely_space_emp)^2
+			}
+		}
+
+		return(diff_cov_emp)
 	}
 
-	jWarp = 1:15
-	#set.seed(1234)
-	#init <- rnorm(length(jWarp), 0, 0.1)
-	init <- rep(0, length(jWarp))
-	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
-	fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
 
-	jWarp = 1:20
-	init <- c(fit1$par, rep(0, length(jWarp) - length(fit1$par)))
-	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
-
-	for(aa in 1:20){
-		fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
-	}
-
-	p <- fit1$par
-
-	beta1 <- p
-  
-	parWarpsSum <- matrix(rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)), ncol = 1)
-
-	Y <- c(parWarpsSum[, 1] %*% sigma)
-
-	Y1 <- Y %*% t(Y)
-	Y1[1:4, 1:5]
-	EMP_COV[1:4, 1:5]
+	init <- c(0, 0, 0.1, 0, 0.1)
+	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
+	fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
 
 
 }
