@@ -386,12 +386,27 @@ if(NONPARAMETRIC_ESTIMATION){
 
 	}
 
+	write.table(params, file = paste(root, "Results/5-boxplots-estimated-advection-parameters", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+	params <- read.table(paste(root, "Results/5-boxplots-estimated-advection-parameters", sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+
+	
+	# width of each boxplot is 0.8
+	x0s <- 1:ncol(params) - 0.4
+	x1s <- 1:ncol(params) + 0.4
+	# these are the y-coordinates for the horizontal lines
+	# that you need to set to the desired values.
+	y0s <- matrix(c(WIND_MU, WIND_VAR[1, 1], WIND_VAR[2, 2], WIND_VAR[1, 2]), nrow = 1, ncol = ncol(params), byrow = T)
+
 	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 5, height = 15)
 
 	par(mfrow = c(1, 2))
 
 	boxplot(params[, 1:2])
+  	segments(x0 = x0s, x1 = x1s, y0 = y0s[1:2], col = "red", lwd = 2)
+
 	boxplot(params[, 3:4])
+  	segments(x0 = x0s, x1 = x1s, y0 = y0s[3:4], col = "red", lwd = 2)
 
 	dev.off()
 }
