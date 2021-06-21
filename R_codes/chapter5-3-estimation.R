@@ -338,18 +338,20 @@ if(NONPARAMETRIC_ESTIMATION){
 		diff_cov_emp <- 0
 
 		for(l2 in locs_sub_index){
-			for(t2 in 1:(TT - 1)){
-				cov_purely_time_emp <- empcov[l2, l2 + n * t2]
-				cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
-				for(k in 1:n_sim){
-					wind <- WIND_SIMULATED[k, ]
-					new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
-					find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+			for(t1 in 1:(TT - 1)){
+				for(t2 in 1:(TT - 1)){
+					cov_purely_time_emp <- empcov[l2 + n * (t1 - 1), l2 + n * t2]
+					cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
+					for(k in 1:n_sim){
+						wind <- WIND_SIMULATED[k, ]
+						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
+						find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
 
-					cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+					}
+					cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
+					diff_cov_emp <- diff_cov_emp + (cov_purely_time_emp - cov_purely_space_emp)^2
 				}
-				cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
-				diff_cov_emp <- diff_cov_emp + (cov_purely_time_emp - cov_purely_space_emp)^2
 			}
 		}
 
@@ -406,7 +408,7 @@ if(NONPARAMETRIC_ESTIMATION){
   	segments(x0 = x0s, x1 = x1s, y0 = y0s[1:2], col = "red", lwd = 2)
 
 	boxplot(params[, 3:5])
-  	segments(x0 = x0s, x1 = x1s, y0 = y0s[3:4], col = "red", lwd = 2)
+  	segments(x0 = x0s, x1 = x1s, y0 = y0s[3:5], col = "red", lwd = 2)
 
 	dev.off()
 }
