@@ -319,11 +319,10 @@ if(NONPARAMETRIC_ESTIMATION){
 
 
 
-	locs_sub_index <- which(sim_grid_locations[, 1] >= -1 & sim_grid_locations[, 1] <= 1 & sim_grid_locations[, 2] >= -1 & sim_grid_locations[, 2] <= 1)
+	locs_sub_index <- which(sim_grid_locations[, 1] >= -0.5 & sim_grid_locations[, 1] <= 0.5 & sim_grid_locations[, 2] >= -0.5 & sim_grid_locations[, 2] <= 0.5)
 	locs_sub_length <- length(locs_sub_index)
 
 	n_sim = 100
-	empcov <- cov1
 
 	NEGLOGLIK_NONPARAMETRIC <- function(p){
 
@@ -359,15 +358,31 @@ if(NONPARAMETRIC_ESTIMATION){
 
 
 	init <- c(0, 0, 1, 0, 1)
-	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
-	fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
+
+	params <- matrix(, ncol = length(init), nrow = 100)
+
+	for(rep in 1:100){
+
+		set.seed(rep)
+		r1 <- rmvn(300, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
+		empcov <- cov(r1)
+
+		fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
+
+		for(aa in 1:10){
+
+			cat("SIMULATION REP: ", rep, " --- ESTIMATION REP: ", aa, '\n')
+			fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
+		}
+		params[rep, ] <- fit1$par
+
+	}
 
 	p <- fit1$par
 	wind_mu <- p[1:2]
 
 	wind_var_chol <- matrix(c(p[3], p[4], 0, p[5]), ncol = 2, byrow = T)
-        	wind_var <- t(wind_var_chol) %*% wind_var_chol
-
+	wind_var <- t(wind_var_chol) %*% wind_var_chol
 
 }
 
