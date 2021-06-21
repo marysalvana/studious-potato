@@ -430,6 +430,61 @@ if(NONPARAMETRIC_ESTIMATION){
 	M.n<-dim(gg)[1]
 	Sig.CLS <- (t(M)%*%diag(pre1[(2:(M.n+1))])%*%M) +diag(pre1[1],n)
 
+
+	############################################################################################################
+
+	Xtarg <- sim_grid_locations 
+
+	htarg <- as.matrix(dist(rbind(X, Xtarg),diag=TRUE,upper=TRUE))
+	htarg <- htarg[1:nn, (nn + 1):(nn + nrow(Xtarg))]
+	sigma <- htarg^2 * log(htarg)
+	sigma[htarg == 0] <- 0
+
+	EMP_COV <- cov1[1:n, 1:n]
+
+	NEGLOGLIK_NONPARAMETRIC <- function(p){
+
+		beta1 <- p
+	  
+		parWarpsSum <- matrix(rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)), ncol = 1)
+
+		Y <- exp(c(parWarpsSum[, 1] %*% sigma))
+
+		Y1 <- Y %*% t(Y)
+
+		out <- sum((EMP_COV[1:7, ] - Y1[1:7, ])^2)
+
+		return(out)
+	}
+
+	jWarp = 1:15
+	#set.seed(1234)
+	#init <- rnorm(length(jWarp), 0, 0.1)
+	init <- rep(0, length(jWarp))
+	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
+	fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
+
+	jWarp = 1:20
+	init <- c(fit1$par, rep(0, length(jWarp) - length(fit1$par)))
+	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
+
+	for(aa in 1:20){
+		fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 10000)) #
+	}
+
+	p <- fit1$par
+
+	beta1 <- p
+  
+	parWarpsSum <- matrix(rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)), ncol = 1)
+
+	Y <- c(parWarpsSum[, 1] %*% sigma)
+
+	Y1 <- Y %*% t(Y)
+	Y1[1:4, 1:5]
+	EMP_COV[1:4, 1:5]
+
+
 }
 
 
