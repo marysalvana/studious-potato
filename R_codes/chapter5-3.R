@@ -334,7 +334,7 @@ if(NONPARAMETRIC_ESTIMATION){
 
 
 		set.seed(1234)
-		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = wind_mu, Sigma = wind_var_chol), ncol = 2, byrow = T)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = wind_mu, Sigma = wind_var), ncol = 2, byrow = T)
 
 		diff_cov_emp <- 0
 
@@ -358,9 +358,15 @@ if(NONPARAMETRIC_ESTIMATION){
 	}
 
 
-	init <- c(0, 0, 0.1, 0, 0.1)
+	init <- c(0, 0, 1, 0, 1)
 	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
 	fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
+
+	p <- fit1$par
+	wind_mu <- p[1:2]
+
+	wind_var_chol <- matrix(c(p[3], p[4], 0, p[5]), ncol = 2, byrow = T)
+        	wind_var <- t(wind_var_chol) %*% wind_var_chol
 
 
 }
