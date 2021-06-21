@@ -398,7 +398,7 @@ if(NONPARAMETRIC_ESTIMATION){
 	# that you need to set to the desired values.
 	y0s <- matrix(c(WIND_MU, WIND_VAR[1, 1], WIND_VAR[2, 2], WIND_VAR[1, 2]), nrow = 1, ncol = ncol(params), byrow = T)
 
-	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 5, height = 15)
+	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 5, height = 10)
 
 	par(mfrow = c(1, 2))
 
