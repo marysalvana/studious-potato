@@ -369,21 +369,31 @@ if(NONPARAMETRIC_ESTIMATION){
 
 		fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
 
-		for(aa in 1:10){
+		for(aa in 1:5){
 
 			cat("SIMULATION REP: ", rep, " --- ESTIMATION REP: ", aa, '\n')
 			fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
 		}
-		params[rep, ] <- fit1$par
+
+		p <- fit1$par
+		wind_mu <- p[1:2]
+
+		wind_var_chol <- matrix(c(p[3], p[4], 0, p[5]), ncol = 2, byrow = T)
+		wind_var <- t(wind_var_chol) %*% wind_var_chol
+
+
+		params[rep, ] <- c(wind_mu, wind_var[1, 1], wind_var[2, 2], wind_var[1, 2])
 
 	}
 
-	p <- fit1$par
-	wind_mu <- p[1:2]
+	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 5, height = 15)
 
-	wind_var_chol <- matrix(c(p[3], p[4], 0, p[5]), ncol = 2, byrow = T)
-	wind_var <- t(wind_var_chol) %*% wind_var_chol
+	par(mfrow = c(1, 2))
 
+	boxplot(params[, 1:2])
+	boxplot(params[, 3:4])
+
+	dev.off()
 }
 
 
