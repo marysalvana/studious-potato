@@ -357,7 +357,7 @@ if(NONPARAMETRIC_ESTIMATION){
 	}
 
 
-	init <- c(0, 0, 1, 0, 1)
+	init <- c(0.2, 0.2, 0.1, 0, 0.1)
 
 	params <- matrix(, ncol = length(init), nrow = 100)
 
@@ -398,14 +398,14 @@ if(NONPARAMETRIC_ESTIMATION){
 	# that you need to set to the desired values.
 	y0s <- matrix(c(WIND_MU, WIND_VAR[1, 1], WIND_VAR[2, 2], WIND_VAR[1, 2]), nrow = 1, ncol = ncol(params), byrow = T)
 
-	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 5, height = 10)
+	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 10, height = 5)
 
 	par(mfrow = c(1, 2))
 
 	boxplot(params[, 1:2])
   	segments(x0 = x0s, x1 = x1s, y0 = y0s[1:2], col = "red", lwd = 2)
 
-	boxplot(params[, 3:4])
+	boxplot(params[, 3:5])
   	segments(x0 = x0s, x1 = x1s, y0 = y0s[3:4], col = "red", lwd = 2)
 
 	dev.off()
