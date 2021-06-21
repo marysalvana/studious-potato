@@ -39,14 +39,14 @@ Z <- r1[1, 1:n] - mean(r1[1, 1:n])
 
 Z_dot_product <- Z %*% t(Z)
 
-kernel <- MATERN_UNI_STATIONARY(PARAMETER = c(1, 0.02, 1), LOCATION = sim_grid_locations)
+kernel <- MATERN_UNI_STATIONARY(PARAMETER = c(1, 0.001, 0.5), LOCATION = sim_grid_locations)
 
 vals <- c()
 for(k in 1:n){
 
 	cat(k, '\n')
 
-	loc1 <- reference_locations[1]
+	loc1 <- reference_locations[2]
 	loc2 <- k
 	
 	KERNEL <- kernel[loc1, ] %*% t(kernel[loc2, ])
@@ -63,9 +63,10 @@ par(mfrow = c(2, 2))
 #image.plot(matrix(cov1[reference_locations[1], 1:n], N, N))
 
 #image.plot(matrix(emp_cov[reference_locations[2], 1:n], N, N))
-image.plot(matrix(cov1[reference_locations[1], 1:n], N, N))
+image.plot(matrix(cov1[reference_locations[2], 1:n], N, N))
 
 image.plot(matrix(vals, N, N))
+#image.plot(matrix(r1[3, 1:n], N, N))
 
 dev.off()
 
