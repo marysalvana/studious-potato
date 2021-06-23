@@ -39,7 +39,7 @@ for(hr in 1:5){
 	if(hr == 1){
 		mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5)
 		mtext('Strong', side = 2, line = 7, adj = 0.5, cex = 2.5, col = 4, font = 2)
-		axis(2, cex.axis = 2)
+		axis(2, cex.axis = 1)
 	}
 	mtext(paste('t = ', hr, sep = ''), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 }
@@ -59,10 +59,10 @@ for(hr in 1:5){
 	if(hr == 1){
 		mtext(expression(s[y]), side = 2, line = 4, adj = 0.5, cex = 2.5)
 		mtext('Weak', side = 2, line = 7, adj = 0.5, cex = 2.5, col = 4, font = 2)
-		axis(2, cex.axis = 2)
+		axis(2, cex.axis = 1)
 	}
 	mtext(expression(s[x]), side = 1, line = 4, adj = 0.5,  cex = 2.5)
-	axis(1, at = seq(0, 1, by = 0.2), labels = c("0", "0.2", "0.4", "0.6", "0.8", "1"), cex.axis = 2, mgp=c(3, 3, 0))
+	axis(1, at = seq(0, 1, by = 0.2), labels = c("0", "0.2", "0.4", "0.6", "0.8", "1"), cex.axis = 1)
 }
 
 screen(2)
