@@ -24,6 +24,12 @@ chapter2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 - chapter5-2.R -- codes for simulating theoretical and empirical Taylor's hypothesis test functions
 - chapter5-3.R -- codes for simulating Lagrangian nonstationary covariance (spatially varying and deformation models) and nonparametric estimation of the advection velocity parameters
 - chapter5-4.R -- codes for real data application
+<br> <br>
+- chapter7-1-synthetic-data.R -- codes for plotting synthetic data for space-time ExaGeoStat
+- chapter7-2-extract-data-from-ncdf.R -- codes for extracting data from ncdf
+- chapter7-3-real-data.R -- codes for processing real data application results from Shaheen 
+<br> <br>
+- chapter8-1-synthetic-data.R -- codes for plotting synthetic data for ExaGeoStat Lagrangian
 
 ## Packages
 
