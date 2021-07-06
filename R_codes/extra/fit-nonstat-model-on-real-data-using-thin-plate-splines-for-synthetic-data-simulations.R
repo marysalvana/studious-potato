@@ -55,7 +55,7 @@ sigma[htarg == 0] <- 0
 
 
 
-Z_rand_sample <- matrix(DATA[[1]][1, ], nrow = 1)
+Z_rand_sample <- matrix(DATA[[1]][1:20, ], nrow = 1)
 
 
 
