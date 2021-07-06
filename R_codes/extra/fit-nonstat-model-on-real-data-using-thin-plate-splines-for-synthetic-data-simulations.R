@@ -18,8 +18,8 @@ locs <- cbind((locs[, 1] - min(locs[, 1])) / (max(locs[, 1]) - min(locs[, 1])), 
 
 
 NN <- 50
-grid_x <- seq(from = 0, to = 1, length.out = NN)
-grid_y <- seq(from = 0, to = 1, length.out = NN)
+grid_x <- seq(from = -1, to = 2, length.out = NN)
+grid_y <- seq(from = -1, to = 2, length.out = NN)
 X <- expand.grid(grid_x, grid_y) %>% as.matrix()
 
 nn <- nrow(X)
