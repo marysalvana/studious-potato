@@ -58,3 +58,7 @@ Spatial subset: 26.719,5.625,85.078,42.188
 
 covariates: https://disc.gsfc.nasa.gov/datasets/M2I3NVASM_5.12.4/summary
 
+
+## Note:
+
+Run the Rscript inside the folder R_codes
