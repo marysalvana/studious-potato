@@ -102,8 +102,10 @@ Y <- locs
 Y[, 1] <- Y[, 1] + c(parWarpsSum[, 1] %*% sigma)
 Y[, 2] <- Y[, 2] + c(parWarpsSum[, 2] %*% sigma)
 
-pdf(file = paste(root, 'Figures/extra-real-data-estimated-deformation.pdf', sep = ''), width = 10, height = 10)
+pdf(file = paste(root, 'Figures/extra-real-data-estimated-deformation.pdf', sep = ''), width = 10, height = 5)
 
+par(mfrow = c(1, 2))
+plot(locs, pch = 3, cex = 2)
 plot(Y, pch = 3, cex = 2)
 
 dev.off()
