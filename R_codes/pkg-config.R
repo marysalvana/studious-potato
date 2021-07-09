@@ -7,3 +7,6 @@ sourceCpp("./Functions/spatially_varying_parameters2-IBEX.cpp")
 sourceCpp("./Functions/distR.cpp")
 
 
+root <- gsub('.{7}$', '', getwd())
+
+
