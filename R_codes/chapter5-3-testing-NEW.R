@@ -143,7 +143,7 @@ if(MODEL == 1){
 
 
 
-		cat('Computing empirical covariance...', '\n')
+		cat('Computing spatio-temporal empirical covariance...', '\n')
 
 		empcov <- cov(r1)
 
@@ -165,27 +165,46 @@ if(MODEL == 1){
 
 
 		
-		diff_cov_emp <- 0
-
 		for(l2 in locs_sub_index[1]){
-			cov_purely_space_emp <- c()
-			#for(t1 in 1:(TT - 1)){
-				for(t2 in 0:(TT - 1)){
-					cov_purely_time_emp <- empcov[l2, l2 + n * t2]
-					#cov_purely_time_emp <- empcov[l2 + n * (t1 - 1), l2 + n * t2]
-					cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
+			cov_purely_space_emp <- matrix(, TT, TT)
+			for(t1 in 1:TT){
+				for(t2 in t1:TT){
+					cov_purely_space_emp_temp <- 0
 					for(k in 1:n_sim){
 						wind <- est_wind_vals[k, ]
 						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
 						find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
 
-						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2 + n * (t1 - 1), find_new_loc_index + n * (t1 - 1)]
 					}
-					cov_purely_space_emp <- c(cov_purely_space_emp, cov_purely_space_emp_temp / n_sim)
+					cov_purely_space_emp[t1, t2] <- cov_purely_space_emp_temp / n_sim
+					if(t2 != t1){
+						cov_purely_space_emp[t2, t1] <- cov_purely_space_emp[t1, t2]
+					}
 				}
-				set.seed(1)
-				r1_temporal <- mvrnorm(300, rep(0, TT), cov_purely_space_emp)
-			#}
+			}
+
+			D <- eigen(cov_purely_space_emp)$val
+			D[which(D < 0)] <- 0
+			U <- eigen(cov_purely_space_emp)$vectors
+			cov_purely_time_emp <- U %*% diag(D) %*% t(U)
+
+			set.seed(1)
+			r1_time <- mvrnorm(300, rep(0, TT), cov_purely_time_emp)
+
+
+
+			cat('Computing purely temporal empirical covariance...', '\n')
+
+			empcov_time <- cov(r1_time)
+
+
+
+			cat('Computing difference between purely spatial and purely temporal empirical covariance...', '\n')
+
+			diff_cov_emp <- empcov_time - cov_purely_space_emp
+
+
 		}
 
 	}
