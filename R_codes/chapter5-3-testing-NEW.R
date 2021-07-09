@@ -141,9 +141,52 @@ if(MODEL == 1){
 		set.seed(1)
 		r1 <- rmvn(300, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
 
+
+
 		cat('Computing empirical covariance...', '\n')
 
 		empcov <- cov(r1)
+
+
+
+		cat('Simulating velocity from estimated distribution of advection velocity...', '\n')
+
+		EST_WIND_MU <- WIND_MU
+		EST_WIND_VAR <- WIND_VAR
+
+		set.seed(1234)
+		est_wind_vals <- mvrnorm(100, EST_WIND_MU, EST_WIND_VAR)
+
+
+
+		locs_sub_index <- which(sim_grid_locations[, 1] >= -0.5 & sim_grid_locations[, 1] <= 0.5 & sim_grid_locations[, 2] >= -0.5 & sim_grid_locations[, 2] <= 0.5)
+		locs_sub_length <- length(locs_sub_index)
+		n_sim <- 100
+
+
+		
+		diff_cov_emp <- 0
+
+		for(l2 in locs_sub_index[1]){
+			cov_purely_space_emp <- c()
+			#for(t1 in 1:(TT - 1)){
+				for(t2 in 0:(TT - 1)){
+					cov_purely_time_emp <- empcov[l2, l2 + n * t2]
+					#cov_purely_time_emp <- empcov[l2 + n * (t1 - 1), l2 + n * t2]
+					cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
+					for(k in 1:n_sim){
+						wind <- est_wind_vals[k, ]
+						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
+						find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+
+						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+					}
+					cov_purely_space_emp <- c(cov_purely_space_emp, cov_purely_space_emp_temp / n_sim)
+				}
+				set.seed(1)
+				r1_temporal <- mvrnorm(300, rep(0, TT), cov_purely_space_emp)
+			#}
+		}
 
 	}
 
@@ -184,7 +227,7 @@ if(MODEL == 1){
 
 		cores=detectCores()
 
-		#number_of_cores_to_use = cores[1]-1 # not to overload the computer
+		number_of_cores_to_use = cores[1]-1 # not to overload the computer
 		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
 
 		cl <- makeCluster(number_of_cores_to_use) 
