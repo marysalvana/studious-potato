@@ -164,8 +164,6 @@ if(SIMULATE){
 			cl <- makeCluster(number_of_cores_to_use) 
 			registerDoParallel(cl)
 
-			number_of_chunks = number_of_cores_to_use
-
 			clusterExport(cl, "root")
 			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
 			
@@ -258,8 +256,6 @@ if(SIMULATE){
 			cl <- makeCluster(number_of_cores_to_use) 
 			registerDoParallel(cl)
 
-			number_of_chunks = number_of_cores_to_use
-
 			clusterExport(cl, "root")
 			clusterEvalQ(cl, source(paste(root, "R_codes/Functions/cov_func.R", sep = '')))
 			
@@ -338,9 +334,10 @@ if(NONPARAMETRIC_ESTIMATION){
 		diff_cov_emp <- 0
 
 		for(l2 in locs_sub_index){
-			for(t1 in 1:(TT - 1)){
+			#for(t1 in 1:(TT - 1)){
 				for(t2 in 1:(TT - 1)){
-					cov_purely_time_emp <- empcov[l2 + n * (t1 - 1), l2 + n * t2]
+					cov_purely_time_emp <- empcov[l2, l2 + n * t2]
+					#cov_purely_time_emp <- empcov[l2 + n * (t1 - 1), l2 + n * t2]
 					cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
 					for(k in 1:n_sim){
 						wind <- WIND_SIMULATED[k, ]
@@ -352,7 +349,7 @@ if(NONPARAMETRIC_ESTIMATION){
 					cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
 					diff_cov_emp <- diff_cov_emp + (cov_purely_time_emp - cov_purely_space_emp)^2
 				}
-			}
+			#}
 		}
 
 		return(diff_cov_emp)
@@ -455,4 +452,39 @@ if(PLOT){
 
 
 }
+
+##################################################################################################
+
+
+NEGLOGLIK_DEFORM <- function(p){
+
+	theta <- exp(p[1:3])
+
+	beta1 <- p[3 + 1:length(jWarp)]
+	beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
+  
+	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+	Y <- Xtarg
+	Y[, 1] <- Y[, 1] + c(parWarpsSum[, 1] %*% sigma)
+	Y[, 2] <- Y[, 2] + c(parWarpsSum[, 2] %*% sigma)
+
+	dist0 <- as.matrix(dist(Y, diag = TRUE, upper = TRUE))	
+
+	Sigma <- theta[1] * Matern(dist0, range = theta[2], nu = theta[3])
+	cholmat <- t(cholesky(Sigma, parallel = TRUE))
+	z <- forwardsolve(cholmat, t(Z_rand_sample))
+	logsig  <- 2 * sum(log(diag(cholmat))) * nrow(Z_rand_sample)
+	out  <- 1/2 * logsig + 1/2 * sum(z^2)
+
+	return(out)
+}
+
+jWarp = 1:5
+init <- c(rep(0, 3), rep(0, 2 * length(jWarp)))
+fit1 <- optim(par = init, fn = NEGLOGLIK_DEFORM, control = list(trace = 5, maxit = 3000)) #
+
+p <- fit1$par
+
 
