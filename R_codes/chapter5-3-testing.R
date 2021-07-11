@@ -163,9 +163,13 @@ if(MODEL == 1){
 		locs_sub_length <- length(locs_sub_index)
 		n_sim <- 100
 
+		lag_max <- TT - 1
+		f_emp <- matrix(, ncol = length(locs_sub_index), nrow = lag_max)
+		#f <- matrix(, ncol = length(locs_sub_index) * (TT - lag_max))
 
-		
-		for(l2 in locs_sub_index[1]){
+
+		ct <- 0
+		for(l2 in locs_sub_index){
 			cov_purely_space_emp <- matrix(, TT, TT)
 			for(t1 in 1:TT){
 				for(t2 in t1:TT){
@@ -204,9 +208,49 @@ if(MODEL == 1){
 
 			diff_cov_emp <- empcov_time - cov_purely_space_emp
 
+			ct <- ct + 1
+			f_emp[, ct] <- diff_cov_emp[1, 1:lag_max]					
+
+			#for(l1 in 1:1){
+		
+				#f[, (l2 - 1) * ncol(f) + l1] <- diff_cov_emp[l1, l1 + 0:(ncol(f) - 1)]					
+
+			#}
 
 		}
 
+		ff <- fbplot(f_emp,plot=F);
+		nonOut <- setdiff(1:ct, ff$outpoint);
+		f_emp <- f_emp[, nonOut];
+
+
+
+		cat('Computing ranks...', '\n')
+
+
+
+		n=dim(f_theo)[2];
+		m=dim(f_emp)[2];
+		r=dim(f_ref)[2];
+		order=integer(n+m);
+		for(i in 1:m){
+			sample <- cbind(f_ref, f_emp[, i]);
+			result <- fbplot(sample, plot = F, method = "Both");
+			order[i] <- sum(result$depth[1:r] <= result$depth[r + 1])
+		}
+
+		for(i in 1:n){
+			sample <- cbind(f_ref, f_theo[, i]);
+			result <- fbplot(sample, plot = F, method = "Both");
+			order[i + m] <- sum(result$depth[1:r] <= result$depth[r + 1])
+		}
+		rk <- (rank(order) - 1) / (n + m - 1);
+		W <- mean(rk[1:m]);
+
+		cat('Rank value = ', W, '\n')
+
+
+	
 	}
 
 
