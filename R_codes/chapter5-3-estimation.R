@@ -72,7 +72,7 @@ htarg <- htarg[1:nn, (nn + 1):(nn + nrow(Xtarg))]
 sigma <- htarg^2 * log(htarg)
 sigma[htarg == 0] <- 0
 
-n_sim <- 100
+n_sim <- 500
 
 if(MODEL == 1){
 
@@ -293,11 +293,10 @@ if(ESTIMATION){
 
 	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
 
-	for(aa in 1:5){
-
-		cat("SIMULATION REP: ", REP, " --- ESTIMATION REP: ", aa, '\n')
-		fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
-	}
+	#for(aa in 1:5){
+	#	cat("SIMULATION REP: ", REP, " --- ESTIMATION REP: ", aa, '\n')
+	#	fit1 <- optim(par = fit1$par, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
+	#}
 
 	p <- fit1$par
 	wind_mu <- p[1:2]
@@ -353,8 +352,8 @@ if(PLOT){
 
 	}
 
-}
 
+}
 
 if(PLOT_RESULTS){
 
@@ -406,9 +405,4 @@ if(PLOT_RESULTS){
 	close.screen( all=TRUE)
 
 	dev.off()
-
-
-
 }
-
-
