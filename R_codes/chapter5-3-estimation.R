@@ -25,7 +25,7 @@ number_of_cores_to_use <- 39
 
 
 N <- 20
-TT <- 5
+TT <- 2
 grid_x <- seq(from = 0, to = 1, by = 0.05)
 grid_y <- seq(from = 0, to = 1, by = 0.05)
 sim_grid_locations <- expand.grid(grid_x, grid_y) %>% as.matrix()
