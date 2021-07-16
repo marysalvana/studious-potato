@@ -376,7 +376,7 @@ if(PLOT_RESULTS){
 	split.screen( figs = c( 2, 3 ), screen = 1 )
 
 	hr_label <- c('Weak', 'Moderate', 'Strong')
-	mod_label <- c('A', 'B')
+	mod_label <- c('A', 'C')
 
 	for(model in 1:2){
 
@@ -390,7 +390,7 @@ if(PLOT_RESULTS){
 
 			if(m == 1){
 				#mtext(expression(hat(f)), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-				text(-0.3, 4, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
+				text(-1, 4, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
 				#mtext(mod_label[model], side = 2, line = 8, adj = 0.5, cex = 4, font = 2, col = 'blue')
 				axis(2, cex.axis = 2)
 			}
