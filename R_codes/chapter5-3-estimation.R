@@ -376,7 +376,7 @@ if(PLOT_RESULTS){
 	split.screen( figs = c( 2, 3 ), screen = 1 )
 
 	hr_label <- c('Weak', 'Moderate', 'Strong')
-	mod_label <- c('A', 'C')
+	mod_label <- c('A', 'B')
 
 	for(model in 1:2){
 
@@ -385,12 +385,12 @@ if(PLOT_RESULTS){
 			screen((model - 1) * 3 + 2 + m)
 			par(mai=c(0.2,0.2,0.2,0.2))
 			
-			boxplot(params[, 1:5], xaxt = 'n', yaxt = 'n')
+			boxplot(params[, 1:5], xaxt = 'n', yaxt = 'n', ylim = c(-0.1, 1))
 			segments(x0 = x0s, x1 = x1s, y0 = y0s[1:5], col = "red", lwd = 2)
 
 			if(m == 1){
 				#mtext(expression(hat(f)), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-				text(-1, 4, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
+				text(-0.6, 0.5, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
 				#mtext(mod_label[model], side = 2, line = 8, adj = 0.5, cex = 4, font = 2, col = 'blue')
 				axis(2, cex.axis = 2)
 			}
