@@ -137,15 +137,18 @@ if(MODEL == 1){
 		}
 
 		stopCluster(cl)
-
-
+	
 
 		cov1 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
 
-		cat('Generating realizations...', '\n')
 
-		set.seed(1)
-		r1 <- rmvn(1000, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
+	}
+
+
+	cat('Generating realizations...', '\n')
+
+	set.seed(1)
+	r1 <- rmvn(1000, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
 
 
 }else if(MODEL == 2){
@@ -208,7 +211,7 @@ if(MODEL == 1){
 		}
 
 		stopCluster(cl)
-
+	
 
 
 		cov2 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
@@ -281,8 +284,6 @@ if(ESTIMATION){
 
 	init <- c(0.2, 0.2, 0.1, 0, 0.1)
 
-	params <- matrix(, ncol = length(init), nrow = 100)
-
 
 
 	set.seed(REP)
@@ -321,7 +322,7 @@ if(PLOT){
 
 
 
-	if(model == 1){
+	if(MODEL == 1){
 
 
 
@@ -335,7 +336,7 @@ if(PLOT){
 
 
 
-	}else if(model == 2){
+	}else if(MODEL == 2){
 
 
 

@@ -28,5 +28,6 @@ module load gsl/2.4
 module load R/3.6.0/gnu-6.4.0
 mkdir -p $R_LIBS
 
-Rscript /ibex/scratch/salvanmo/studious-potato/R_codes/chapter2-2.R $1 $2 $3 $4 $5 $6
+#Rscript /ibex/scratch/salvanmo/studious-potato/R_codes/chapter2-2.R $1 $2 $3 $4 $5 $6
+Rscript /ibex/scratch/salvanmo/studious-potato/R_codes/chapter5-3-estimation.R $1 $2 $3
 
