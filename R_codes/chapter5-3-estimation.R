@@ -390,7 +390,7 @@ if(PLOT_RESULTS){
 
 			if(m == 1){
 				#mtext(expression(hat(f)), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-				text(-0.3, 0.5, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
+				text(-0.3, 4, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
 				#mtext(mod_label[model], side = 2, line = 8, adj = 0.5, cex = 4, font = 2, col = 'blue')
 				axis(2, cex.axis = 2)
 			}
@@ -398,8 +398,7 @@ if(PLOT_RESULTS){
 			if(model == 1){
 				mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 			}else{
-				mtext(expression(t^'*'), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
-				axis(1, at = seq(1, 4, by = 1), cex.axis = 2, mgp = c(1, 1.5, 0))
+				axis(1, at = seq(1, 5, by = 1), cex.axis = 2, mgp = c(1, 1.5, 0))
 			}
 		}
 	}				
