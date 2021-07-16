@@ -10,8 +10,8 @@ MODEL = 1
 
 
 
-WIND <- WIND_MU <- rep(0.3001, 2)
-WIND_VAR <- matrix(0.1 * diag(2), 2, 2)
+WIND <- WIND_MU <- rep(0.0501, 2)
+WIND_VAR <- matrix(0.0001 * diag(2), 2, 2)
 
 
 
@@ -119,7 +119,7 @@ if(MODEL == 1){
 		cat('Simulating wind values...', '\n')
 
 		set.seed(1234)
-		wind_vals <- mvrnorm(100, WIND_MU, WIND_VAR)
+		wind_vals <- mvrnorm(500, WIND_MU, WIND_VAR)
 
 		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
 
@@ -139,7 +139,7 @@ if(MODEL == 1){
 		cat('Generating realizations...', '\n')
 
 		set.seed(1)
-		r1 <- rmvn(300, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
+		r1 <- rmvn(1000, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
 
 
 
@@ -151,122 +151,133 @@ if(MODEL == 1){
 
 		cat('Simulating velocity from estimated distribution of advection velocity...', '\n')
 
-		EST_WIND_MU <- WIND_MU
-		EST_WIND_VAR <- WIND_VAR
+		EST_WIND_MU <- WIND_MU #+ 0.01
+		EST_WIND_VAR <- WIND_VAR #+ 0.01
 
-		set.seed(1234)
-		est_wind_vals <- mvrnorm(100, EST_WIND_MU, EST_WIND_VAR)
+		W_vals <- c()
 
-
-
-		locs_sub_index <- which(sim_grid_locations[, 1] >= -0.5 & sim_grid_locations[, 1] <= 0.5 & sim_grid_locations[, 2] >= -0.5 & sim_grid_locations[, 2] <= 0.5)
-		locs_sub_length <- length(locs_sub_index)
-		n_sim <- 100
-
-		lag_max <- TT - 1
-		f_theo <- f_ref <- f_emp <- matrix(, ncol = length(locs_sub_index), nrow = lag_max)
-		#f <- matrix(, ncol = length(locs_sub_index) * (TT - lag_max))
+		for(rep in 1:100){
+			set.seed(rep)
+			est_wind_vals <- mvrnorm(500, EST_WIND_MU, EST_WIND_VAR)
 
 
 
-		ct <- 0
-		for(l2 in locs_sub_index){
-			cov_purely_space_emp <- cov_purely_time_emp <- matrix(, TT, TT)
-			for(t1 in 1:TT){
-				for(t2 in t1:TT){
-					cov_purely_time_emp[t1, t2] <- empcov[l2 + n * (t1 - 1), l2 + n * (t2 - 1)]
-					cov_purely_space_emp_temp <- 0
-					for(k in 1:n_sim){
-						wind <- est_wind_vals[k, ]
-						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
-						find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+			locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
+			#locs_sub_index <- which(sim_grid_locations[, 1] >= -0.5 & sim_grid_locations[, 1] <= 0.5 & sim_grid_locations[, 2] >= -0.5 & sim_grid_locations[, 2] <= 0.5)
+			locs_sub_length <- length(locs_sub_index)
+			n_sim <- 500
 
-						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2 + n * (t1 - 1), find_new_loc_index + n * (t1 - 1)]
-					}
-					cov_purely_space_emp[t1, t2] <- cov_purely_space_emp_temp / n_sim
-					if(t2 != t1){
-						cov_purely_space_emp[t2, t1] <- cov_purely_space_emp[t1, t2]
-						cov_purely_time_emp[t2, t1] <- cov_purely_time_emp[t1, t2]
+			lag_max <- TT - 1
+			f_theo <- f_ref <- f_emp <- matrix(, ncol = length(locs_sub_index), nrow = lag_max)
+			#f <- matrix(, ncol = length(locs_sub_index) * (TT - lag_max))
+
+
+			ct <- 0
+			for(l2 in locs_sub_index){
+				cov_purely_space_emp <- cov_purely_time_emp <- matrix(, TT, TT)
+				for(t1 in 1:TT){
+					for(t2 in t1:TT){
+						cov_purely_time_emp[t1, t2] <- empcov[l2 + n * (t1 - 1), l2 + n * (t2 - 1)]
+						cov_purely_space_emp_temp <- 0
+						for(k in 1:n_sim){
+							wind <- est_wind_vals[k, ]
+							new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * (t2 - 1), sim_grid_locations[l2, 2] - wind[2] * (t2 - 1)), ncol = 2)
+							#find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+							find_new_loc_index <- which.min(distR_C(cbind(sim_grid_locations[, 1] - wind[1] * (t1 - 1), sim_grid_locations[, 2] - wind[2] * (t1 - 1)), new_loc))[1]
+
+							cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2 + n * (t1 - 1), find_new_loc_index + n * (t1 - 1)]
+						}
+						cov_purely_space_emp[t1, t2] <- cov_purely_space_emp_temp / n_sim
+						if(t2 != t1){
+							cov_purely_space_emp[t2, t1] <- cov_purely_space_emp[t1, t2]
+							cov_purely_time_emp[t2, t1] <- cov_purely_time_emp[t1, t2]
+						}
 					}
 				}
+
+				diff_cov_emp <- cov_purely_time_emp - cov_purely_space_emp
+
+				#D <- eigen(cov_purely_space_emp)$val
+				#D[which(D < 0)] <- 0
+				#U <- eigen(cov_purely_space_emp)$vectors
+				#cov_purely_time_emp <- U %*% diag(D) %*% t(U)
+
+				set.seed((rep - 1) * 1000 + l2)
+				r1_time <- mvrnorm(2000, rep(0, TT), cov_purely_space_emp)
+
+
+				#cat('Computing purely temporal empirical covariance...', '\n')
+
+				empcov_time <- cov(r1_time[1:1000, ])
+
+
+				#cat('Computing difference between purely spatial and purely temporal empirical covariance...', '\n')
+
+				diff_cov_theo <- empcov_time - cov_purely_space_emp
+
+				empcov_time <- cov(r1_time[1000 + 1:1000, ])
+
+				diff_cov_ref <- empcov_time - cov_purely_space_emp
+
+				ct <- ct + 1
+				f_theo[, ct] <- diff_cov_theo[1, 2:TT]					
+				f_ref[, ct] <- diff_cov_ref[1, 2:TT]					
+				f_emp[, ct] <- diff_cov_emp[1, 2:TT]					
+
 			}
 
-			D <- eigen(cov_purely_space_emp)$val
-			D[which(D < 0)] <- 0
-			U <- eigen(cov_purely_space_emp)$vectors
-			cov_purely_time_emp <- U %*% diag(D) %*% t(U)
+			ff <- fbplot(f_emp, plot=F);
+			nonOut <- setdiff(1:ct, ff$outpoint);
+			f_emp <- f_emp[, nonOut];
 
-			set.seed(1)
-			r1_time <- mvrnorm(300, rep(0, TT), cov_purely_time_emp)
+			ff <- fbplot(f_theo, plot=F);
+			nonOut <- setdiff(1:ct, ff$outpoint);
+			f_theo <- f_theo[, nonOut];
 
-
-
-			#cat('Computing purely temporal empirical covariance...', '\n')
-
-			empcov_time <- cov(r1_time)
+			ff <- fbplot(f_ref, plot=F);
+			nonOut <- setdiff(1:ct, ff$outpoint);
+			f_ref <- f_ref[, nonOut];
 
 
-			#cat('Computing difference between purely spatial and purely temporal empirical covariance...', '\n')
-
-			diff_cov_theo <- empcov_time - cov_purely_space_emp
-
-			set.seed(2)
-			r1_time <- mvrnorm(300, rep(0, TT), cov_purely_time_emp)
-
-			empcov_time <- cov(r1_time)
+			cat('Computing ranks...', '\n')
 
 
-			diff_cov_ref <- empcov_time - cov_purely_space_emp
-			diff_cov_emp <- cov_purely_time_emp - cov_purely_space_emp
 
-			ct <- ct + 1
-			f_theo[, ct] <- diff_cov_theo[1, 1:lag_max]					
-			f_ref[, ct] <- diff_cov_ref[1, 1:lag_max]					
-			f_emp[, ct] <- diff_cov_emp[1, 1:lag_max]					
+			n1=dim(f_theo)[2];
+			m=dim(f_emp)[2];
+			r=dim(f_ref)[2];
+			order=integer(n1 + m);
+			for(i in 1:m){
+				sample <- cbind(f_ref, f_emp[, i]);
+				result <- fbplot(sample, plot = F, method = "Both");
+				order[i] <- sum(result$depth[1:r] <= result$depth[r + 1])
+			}
 
+			for(i in 1:n1){
+				sample <- cbind(f_ref, f_theo[, i]);
+				result <- fbplot(sample, plot = F, method = "Both");
+				order[i + m] <- sum(result$depth[1:r] <= result$depth[r + 1])
+			}
+			rk <- (rank(order) - 1) / (n1 + m - 1);
+			W <- mean(rk[1:m]);
+
+			cat("rep: ", rep, '   Rank value = ', W, '\n')
+			W_vals[rep] <- W
 		}
 
-		ff <- fbplot(f_emp, plot=F);
-		nonOut <- setdiff(1:ct, ff$outpoint);
-		f_emp <- f_emp[, nonOut];
 
-		ff <- fbplot(f_theo, plot=F);
-		nonOut <- setdiff(1:ct, ff$outpoint);
-		f_theo <- f_theo[, nonOut];
+		pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-bootstrap-histogram.pdf', width = 20, height = 15)
+		hist(W_vals)
+		dev.off()
 
-		ff <- fbplot(f_ref, plot=F);
-		nonOut <- setdiff(1:ct, ff$outpoint);
-		f_ref <- f_ref[, nonOut];
+		pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-3-test-functions.pdf', width = 20, height = 15)
 
-
-		cat('Computing ranks...', '\n')
-
-
-
-		n1=dim(f_theo)[2];
-		m=dim(f_emp)[2];
-		r=dim(f_ref)[2];
-		order=integer(n1 + m);
-		for(i in 1:m){
-			sample <- cbind(f_ref, f_emp[, i]);
-			result <- fbplot(sample, plot = F, method = "Both");
-			order[i] <- sum(result$depth[1:r] <= result$depth[r + 1])
-		}
-
-		for(i in 1:n1){
-			sample <- cbind(f_ref, f_theo[, i]);
-			result <- fbplot(sample, plot = F, method = "Both");
-			order[i + m] <- sum(result$depth[1:r] <= result$depth[r + 1])
-		}
-		rk <- (rank(order) - 1) / (n1 + m - 1);
-		W <- mean(rk[1:m]);
-
-		cat('Rank value = ', W, '\n')
-
-
-	
-	}
-
+		par(mfrow = c(3, 1))
+		fbplot(f_emp, method='MBD', ylab = '', xlab = '')
+		fbplot(f_ref, method='MBD', ylab = '', xlab = '')
+		fbplot(f_theo, method='MBD', ylab = '', xlab = '')
+			
+		dev.off()
 
 }else if(MODEL == 2){
 
