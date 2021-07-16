@@ -7,6 +7,7 @@ DISTRIBUTED = T
 MODEL = 1
 ESTIMATION = T
 PLOT = F
+PLOT_RESULTS = F
 
 args = commandArgs(trailingOnly = TRUE)
 REP = as.numeric(args[1])
@@ -352,7 +353,13 @@ if(PLOT){
 
 	}
 
-	params <- read.table(paste(root, "Results/5-boxplots-estimated-advection-parameters", sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+}
+
+
+if(PLOT_RESULTS){
+
+	params_temp <- read.table(paste(root, "Results/5-boxplots-estimated-advection-parameters", sep = ''), header = FALSE, sep = " ") %>% as.matrix()
+	params <- params_temp[, -(1:3)]
 
 	
 	# width of each boxplot is 0.8
@@ -374,6 +381,46 @@ if(PLOT){
 
 	dev.off()
 
+	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 25, height = 10)
+
+	split.screen( rbind(c(0.08,0.98,0.1,0.95), c(0.98,0.99,0.1,0.95)))
+	split.screen( figs = c( 2, 3 ), screen = 1 )
+
+	hr_label <- c('i', 'ii', 'iii')
+	mod_label <- c('A', 'B')
+
+	for(model in 1:2){
+
+		for(m in 1:3){
+		
+			screen((model - 1) * 3 + 2 + m)
+			par(mai=c(0.2,0.2,0.2,0.2))
+			
+			boxplot(params[, 1:5])
+			segments(x0 = x0s, x1 = x1s, y0 = y0s[1:5], col = "red", lwd = 2)
+
+			if(m == 1){
+				#mtext(expression(hat(f)), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+				text(-0.275, 0, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
+				#mtext(mod_label[model], side = 2, line = 8, adj = 0.5, cex = 4, font = 2, col = 'blue')
+				axis(2, cex.axis = 2)
+			}
+
+			if(model == 1){
+				mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+			}else{
+				mtext(expression(t^'*'), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+				axis(1, at = seq(1, 4, by = 1), cex.axis = 2, mgp = c(1, 1.5, 0))
+			}
+		}
+	}				
+
+	close.screen( all=TRUE)
+
+	dev.off()
+
+
 
 }
+
 
