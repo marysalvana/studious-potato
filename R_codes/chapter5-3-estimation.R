@@ -358,7 +358,7 @@ if(PLOT_RESULTS){
 	y0s <- matrix(c(WIND_MU, WIND_VAR[1, 1], WIND_VAR[2, 2], WIND_VAR[1, 2]), nrow = 1, ncol = ncol(params), byrow = T)
 
 
-	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 25, height = 10)
+	pdf(file = paste(root, 'Figures/5-boxplots-estimated-advection-parameters.pdf', sep = ''), width = 23, height = 10)
 
 	split.screen( rbind(c(0.08,0.98,0.1,0.95), c(0.98,0.99,0.1,0.95)))
 	split.screen( figs = c( 2, 3 ), screen = 1 )
@@ -388,7 +388,7 @@ if(PLOT_RESULTS){
 			if(model == 1){
 				mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 			}else{
-				axis(1, at = seq(1, 5, by = 1), labels = LABELS[1:5], cex.axis = 2, mgp = c(1, 1.5, 0))
+				axis(1, at = seq(1, 5, by = 1), labels = LABELS[1:5], cex.axis = 2, mgp = c(1, 1.5, 0), tick = F, line = 0.5)
 			}
 		}
 	}				
