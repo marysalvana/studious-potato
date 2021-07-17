@@ -21,7 +21,7 @@ WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
 WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 
 
-number_of_cores_to_use <- 39
+number_of_cores_to_use <- 23
 
 
 N <- 20
@@ -366,6 +366,8 @@ if(PLOT_RESULTS){
 	hr_label <- c('Weak', 'Moderate', 'Strong')
 	mod_label <- c('A', 'B')
 
+	LABELS <- c(bquote(underline(hat(sigma)[11]^2)), bquote(underline(hat(sigma)[22]^2)), bquote(underline(hat(a))), bquote(underline(hat(nu)[11])), bquote(underline(hat(nu)[22])), bquote(underline(hat(rho))), bquote(underline(hat(mu)[1])), bquote(underline(hat(mu)[2])), bquote(underline(hat(Sigma)[paste(1, ",",1, sep = "")])), bquote(underline(hat(Sigma)[paste(2, ",",2, sep = "")])), bquote(underline(hat(Sigma)[paste(1, ",", 2, sep = "")])), expression(hat(Sigma)[paste(1, ",", 2, sep = "")]))
+
 	for(model in 1:2){
 
 		for(m in 1:3){
@@ -386,7 +388,7 @@ if(PLOT_RESULTS){
 			if(model == 1){
 				mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 			}else{
-				axis(1, at = seq(1, 5, by = 1), cex.axis = 2, mgp = c(1, 1.5, 0))
+				axis(1, at = seq(1, 5, by = 1), labels = LABELS[1:11], cex.axis = 2, mgp = c(1, 1.5, 0))
 			}
 		}
 	}				
@@ -395,3 +397,7 @@ if(PLOT_RESULTS){
 
 	dev.off()
 }
+
+
+
+
