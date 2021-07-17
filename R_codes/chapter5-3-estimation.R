@@ -4,18 +4,18 @@ source("./pkg-config.R")
 
 
 DISTRIBUTED = T
-MODEL = 1
 ESTIMATION = T
 PLOT = F
 PLOT_RESULTS = F
 
 args = commandArgs(trailingOnly = TRUE)
-REP = as.numeric(args[1])
-velocity_mu_config = as.numeric(args[2])
-velocity_var_config = as.numeric(args[3])
+MODEL = as.numeric(args[1])
+REP = as.numeric(args[2])
+velocity_mu_config = as.numeric(args[3])
+velocity_var_config = as.numeric(args[4])
 
 mu_k <- c(0, 0.0501)
-var_k <- c(0.01, 0.1, 1)
+var_k <- c(0.001, 0.01, 0.1)
 
 WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
 WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
