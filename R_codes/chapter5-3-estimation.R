@@ -140,16 +140,11 @@ if(MODEL == 1){
 		stopCluster(cl)
 	
 
-		cov1 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
+		COV <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
 
 
 	}
 
-
-	cat('Generating realizations...', '\n')
-
-	set.seed(1)
-	r1 <- rmvn(1000, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
 
 
 }else if(MODEL == 2){
@@ -200,7 +195,7 @@ if(MODEL == 1){
 		cat('Simulating wind values...', '\n')
 
 		set.seed(1234)
-		wind_vals <- mvrnorm(100, WIND_MU, WIND_VAR)
+		wind_vals <- mvrnorm(n_sim, WIND_MU, WIND_VAR)
 
 		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
 
@@ -215,14 +210,8 @@ if(MODEL == 1){
 	
 
 
-		cov2 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
+		COV <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
 
-		cat('Generating realizations...', '\n')
-
-		set.seed(1)
-		r2 <- rmvn(10, rep(0, n * TT), cov2, ncores = number_of_cores_to_use)
-
-		cat('Saving the values...', '\n')
 
 	}
 
@@ -288,7 +277,7 @@ if(ESTIMATION){
 
 
 	set.seed(REP)
-	r1 <- rmvn(1000, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
+	r1 <- rmvn(1000, rep(0, n * TT), COV, ncores = number_of_cores_to_use)
 	empcov <- cov(r1)
 
 	fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
@@ -305,7 +294,7 @@ if(ESTIMATION){
 	wind_var <- t(wind_var_chol) %*% wind_var_chol
 
 
-	est_params <- matrix(c(REP, velocity_mu_config, velocity_var_config, wind_mu, wind_var[1, 1], wind_var[2, 2], wind_var[1, 2]), nrow = 1)
+	est_params <- matrix(c(MODEL, REP, velocity_mu_config, velocity_var_config, wind_mu, wind_var[1, 1], wind_var[2, 2], wind_var[1, 2]), nrow = 1)
 
 
 
