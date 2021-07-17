@@ -21,7 +21,7 @@ WIND <- WIND_MU <- rep(mu_k[velocity_mu_config], 2)
 WIND_VAR <- matrix(var_k[velocity_var_config] * diag(2), 2, 2)
 
 
-number_of_cores_to_use <- 23
+number_of_cores_to_use <- 39
 
 
 N <- 20
