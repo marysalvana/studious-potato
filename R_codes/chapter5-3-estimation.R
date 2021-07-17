@@ -347,7 +347,7 @@ if(PLOT){
 if(PLOT_RESULTS){
 
 	params_temp <- read.table(paste(root, "Results/5-boxplots-estimated-advection-parameters", sep = ''), header = FALSE, sep = " ") %>% as.matrix()
-	params <- params_temp[, -(1:3)]
+	params <- params_temp[1:20, -(1:3)]
 
 	
 	# width of each boxplot is 0.8
@@ -366,7 +366,7 @@ if(PLOT_RESULTS){
 	hr_label <- c('Weak', 'Moderate', 'Strong')
 	mod_label <- c('A', 'B')
 
-	LABELS <- c(bquote(underline(hat(sigma)[11]^2)), bquote(underline(hat(sigma)[22]^2)), bquote(underline(hat(a))), bquote(underline(hat(nu)[11])), bquote(underline(hat(nu)[22])), bquote(underline(hat(rho))), bquote(underline(hat(mu)[1])), bquote(underline(hat(mu)[2])), bquote(underline(hat(Sigma)[paste(1, ",",1, sep = "")])), bquote(underline(hat(Sigma)[paste(2, ",",2, sep = "")])), bquote(underline(hat(Sigma)[paste(1, ",", 2, sep = "")])), expression(hat(Sigma)[paste(1, ",", 2, sep = "")]))
+	LABELS <- c(bquote(underline(hat(mu)[1])), bquote(underline(hat(mu)[2])), bquote(underline(hat(Sigma)[paste(1, ",",1, sep = "")])), bquote(underline(hat(Sigma)[paste(2, ",",2, sep = "")])), bquote(underline(hat(Sigma)[paste(1, ",", 2, sep = "")])), expression(hat(Sigma)[paste(1, ",", 2, sep = "")]))
 
 	for(model in 1:2){
 
@@ -388,7 +388,7 @@ if(PLOT_RESULTS){
 			if(model == 1){
 				mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
 			}else{
-				axis(1, at = seq(1, 5, by = 1), labels = LABELS[1:11], cex.axis = 2, mgp = c(1, 1.5, 0))
+				axis(1, at = seq(1, 5, by = 1), labels = LABELS[1:5], cex.axis = 2, mgp = c(1, 1.5, 0))
 			}
 		}
 	}				
