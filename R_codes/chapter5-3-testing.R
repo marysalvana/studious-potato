@@ -156,14 +156,13 @@ if(MODEL == 1){
 
 		W_vals <- c()
 
-		for(rep in 1:100){
+		for(rep in 456:500){
 			set.seed(rep)
 			est_wind_vals <- mvrnorm(500, EST_WIND_MU, EST_WIND_VAR)
 
 
 
 			locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
-			#locs_sub_index <- which(sim_grid_locations[, 1] >= -0.5 & sim_grid_locations[, 1] <= 0.5 & sim_grid_locations[, 2] >= -0.5 & sim_grid_locations[, 2] <= 0.5)
 			locs_sub_length <- length(locs_sub_index)
 			n_sim <- 500
 
@@ -182,7 +181,6 @@ if(MODEL == 1){
 						for(k in 1:n_sim){
 							wind <- est_wind_vals[k, ]
 							new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * (t2 - 1), sim_grid_locations[l2, 2] - wind[2] * (t2 - 1)), ncol = 2)
-							#find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
 							find_new_loc_index <- which.min(distR_C(cbind(sim_grid_locations[, 1] - wind[1] * (t1 - 1), sim_grid_locations[, 2] - wind[2] * (t1 - 1)), new_loc))[1]
 
 							cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2 + n * (t1 - 1), find_new_loc_index + n * (t1 - 1)]
@@ -203,19 +201,19 @@ if(MODEL == 1){
 				#cov_purely_time_emp <- U %*% diag(D) %*% t(U)
 
 				set.seed((rep - 1) * 1000 + l2)
-				r1_time <- mvrnorm(2000, rep(0, TT), cov_purely_space_emp)
+				r1_time <- mvrnorm(200000, rep(0, TT), cov_purely_space_emp)
 
 
 				#cat('Computing purely temporal empirical covariance...', '\n')
 
-				empcov_time <- cov(r1_time[1:1000, ])
+				empcov_time <- cov(r1_time[1:100000, ])
 
 
 				#cat('Computing difference between purely spatial and purely temporal empirical covariance...', '\n')
 
 				diff_cov_theo <- empcov_time - cov_purely_space_emp
 
-				empcov_time <- cov(r1_time[1000 + 1:1000, ])
+				empcov_time <- cov(r1_time[100000 + 1:100000, ])
 
 				diff_cov_ref <- empcov_time - cov_purely_space_emp
 
@@ -265,9 +263,17 @@ if(MODEL == 1){
 			W_vals[rep] <- W
 		}
 
+		write.table(W_vals, file = paste(root, "Data/nonstationary-taylor-hypothesis/5-bootstrap-W-values", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+		test <- c()
+		for(aa in 1:10000){
+			test[aa] <- sum(sample(seq(1, 10000), 5000))
+		}
+
 
 		pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-bootstrap-histogram.pdf', width = 20, height = 15)
 		hist(W_vals)
+		#hist(test)
 		dev.off()
 
 		pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-3-test-functions.pdf', width = 20, height = 15)
@@ -278,6 +284,8 @@ if(MODEL == 1){
 		fbplot(f_theo, method='MBD', ylab = '', xlab = '')
 			
 		dev.off()
+
+	}
 
 }else if(MODEL == 2){
 
