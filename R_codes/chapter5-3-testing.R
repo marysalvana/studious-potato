@@ -439,7 +439,7 @@ if(PLOT_MANUSCRIPT){
 			screen((model - 1) * 4 + 2 + m)
 			par(mai=c(0.2,0.2,0.2,0.2))
 			
-			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.35, 0.35))
+			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.5, 0.5))
 			abline(h = 0, col = 3, lty = 2, lwd = 5)
 
 			if(m == 1){
@@ -462,6 +462,50 @@ if(PLOT_MANUSCRIPT){
 	dev.off()
 
 
+	DIFF_ARRAY_EMP <- DIFF_ARRAY_THEO <- array(, dim = c(locs_sub_length, TT - 1, length(adj_mu), 2))
+
+	for(model in 1:2){
+
+		empcov <- EMPCOV[, , model]
+		theocov <- THEOCOV[, , model]
+
+		for(m in 1:length(adj_mu)){
+
+			set.seed(1234)
+			WIND_SIMULATED <- rmsn(n = n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0))
+
+			count <- 1
+			diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
+			for(l2 in locs_sub_index){
+				diff_cov_emp_temp <- diff_cov_theo_temp <- NULL
+				for(t2 in 1:(TT - 1)){
+					cov_purely_time_emp <- empcov[l2, l2 + n * t2]
+					cov_purely_time_theo <- theocov[l2, l2 + n * t2]
+					cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
+					for(k in 1:n_sim){
+						wind <- WIND_SIMULATED[k, ]
+						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
+						find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+
+						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+						cov_purely_space_theo_temp <- cov_purely_space_theo_temp + theocov[l2, find_new_loc_index]
+					}
+					cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
+					cov_purely_space_theo <- cov_purely_space_theo_temp / n_sim
+					diff_cov_emp_temp <- c(diff_cov_emp_temp, cov_purely_time_emp - cov_purely_space_emp)
+					diff_cov_theo_temp <- c(diff_cov_theo_temp, cov_purely_time_theo - cov_purely_space_theo)
+				}
+				diff_cov_emp[count, ] <- diff_cov_emp_temp
+				diff_cov_theo[count, ] <- diff_cov_theo_temp
+				count <- count + 1
+			}
+
+			DIFF_ARRAY_EMP[, , m, model] <- diff_cov_emp
+			DIFF_ARRAY_THEO[, , m, model] <- diff_cov_theo
+		}
+	}
+
+	DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
 
 }
 
@@ -472,6 +516,10 @@ if(PLOT){
 
 	pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-bootstrap-histogram.pdf', width = 20, height = 15)
 	hist(W_vals)
+	dev.off()
+
+	pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-skew-normal-advection.pdf', width = 20, height = 15)
+	plot(WIND_SIMULATED)
 	dev.off()
 
 	pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-3-test-functions.pdf', width = 20, height = 15)
