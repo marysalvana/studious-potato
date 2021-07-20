@@ -523,7 +523,7 @@ if(PLOT_MANUSCRIPT){
 			screen((model - 1) * 4 + 2 + m)
 			par(mai=c(0.2,0.2,0.2,0.2))
 			
-			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.1, 0.1))
+			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.05, 0.05))
 			abline(h = 0, col = 3, lty = 2, lwd = 5)
 
 			if(m == 1){
