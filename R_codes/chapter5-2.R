@@ -33,11 +33,7 @@ n_sim = 500
 
 cov1 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, N_SIM = n_sim)
 
-write.table(cov1[["covariance"]], file = paste(root, "Data/nonstationary-taylor-hypothesis/cov-example-1", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
-
 cov2 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, N_SIM = n_sim)
-
-write.table(cov2[["covariance"]], file = paste(root, "Data/nonstationary-taylor-hypothesis/cov-example-2", sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
 
 set.seed(1234)
 r1 <- mvrnorm(1000, rep(0, ncol(cov1[["covariance"]])), cov1[["covariance"]])
@@ -105,7 +101,7 @@ for(model in 1:2){
 
 DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
 
-pdf(file = paste(root, 'Figures/5-taylors-hypothesis-theoretical-test-functions.pdf', sep = ''), width = 25, height = 10)
+pdf(file = paste(root, 'Figures/5-taylors-hypothesis-theoretical-test-functions-TEST.pdf', sep = ''), width = 25, height = 10)
 
 split.screen( rbind(c(0.08,0.98,0.1,0.95), c(0.98,0.99,0.1,0.95)))
 split.screen( figs = c( 2, 4 ), screen = 1 )
