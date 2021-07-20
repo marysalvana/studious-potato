@@ -461,6 +461,7 @@ if(PLOT_MANUSCRIPT){
 
 	dev.off()
 
+	adj_alpha <- c(0, 0.1, 0.5, 1)
 
 	DIFF_ARRAY_EMP <- DIFF_ARRAY_THEO <- array(, dim = c(locs_sub_length, TT - 1, length(adj_mu), 2))
 
@@ -472,7 +473,7 @@ if(PLOT_MANUSCRIPT){
 		for(m in 1:length(adj_mu)){
 
 			set.seed(1234)
-			WIND_SIMULATED <- rmsn(n = n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0))
+			WIND_SIMULATED <- rmsn(n = n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0) + adj_alpha[m])
 
 			count <- 1
 			diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
