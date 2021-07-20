@@ -6,10 +6,10 @@ source("./pkg-config.R")
 
 
 DISTRIBUTED = T
-MODEL = 1
-TESTING_REFERENCE = T
+TESTING_REFERENCE = F
 PLOT = F
-PLOT_MANUSCRIPT = T
+SIMULATION1 = T
+SIMULATION2 = F
 
 
 
@@ -70,161 +70,198 @@ sigma[htarg == 0] <- 0
 
 n_sim <- 500
 
-
-if(MODEL == 1){
-
-
-
-	p <- c(-0.0445389018, 0.0133324956, 0.1284334294, 0.0122780156, -0.0023861828, -0.0032722984, -0.0060019839, 0.0086527895, -0.0111882022, -0.0349673412, 0.0133417022, -0.0887673908, -0.0275147364, -0.0146839115, -0.0024901228, 0.0041304654, 0.0018204541, -0.0022792563, -0.0189851402, -0.0039365573, 0.0036359306, -0.0121414575, 0.0749431348, -0.0044259752, 0.0033292430, 0.0084257633, -0.0010380224, 0.0100569830, -0.0001364005, 0.0464309935, 0.0040019716, 0.0194226880, 0.0189757404)
-
-	jWarp = 1:10
-	theta <- exp(p[1:3])
-
-	beta1 <- p[3 + 1:length(jWarp)]
-	beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
-	beta3 <- p[3 + 2 * length(jWarp) + 1:length(jWarp)]
-
-	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta3, ncol=length(beta3), nrow=nrow(X), byrow=T)),
-		       rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
-			rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
-
-	PARAMETER_NONSTAT <- t(sigma) %*% parWarpsSum
+adj_mu <- c(0, 0, 0, 0)
+adj_sig <- c(1, 10, 100, 1000)
 
 
+locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
+locs_sub_length <- length(locs_sub_index)
 
-	cat('Computing covariances...', '\n')
+DIFF_ARRAY_EMP <- DIFF_ARRAY_THEO <- array(, dim = c(locs_sub_length, TT - 1, length(adj_mu), 2))
 
-	if(!DISTRIBUTED){
+for(MODEL in 1:2){
 
-		cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T)
+	for(m in 1:length(adj_mu)){
 
-		cat('Generating realizations...', '\n')
-
-		set.seed(1)
-		r1 <- rmvn(10, rep(0, n * TT), cov1[["covariance"]], ncores = number_of_cores_to_use)
-
-		cat('Saving the values...', '\n')
-
-		write.table(cov1[["covariance"]][reference_locations, ], file = paste(root, "Data/nonstationary-taylor-hypothesis/cov-example-1-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
-
-	}else{
-
-		cores=detectCores()
-
-		number_of_cores_to_use = cores[1]-1 # not to overload the computer
-		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
-
-		cl <- makeCluster(number_of_cores_to_use) 
-		registerDoParallel(cl)
-
-		clusterEvalQ(cl, source("./pkg-config.R"))
-		clusterExport(cl, c("PARAMETER_NONSTAT", "TT"), envir = environment())
+		cat("MODEL: ", MODEL, ";  m: ", m, "\n")
 
 		cat('Simulating wind values...', '\n')
-
 		set.seed(1234)
-		wind_vals <- mvrnorm(n_sim, WIND_MU, WIND_VAR)
+		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = WIND_MU + adj_mu[m], Sigma = matrix(WIND_VAR * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
 
-		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
 
-		output <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
-			
-			COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
 
-			return(c(COVARIANCE))
+		if(MODEL == 1){
+
+
+
+			p <- c(-0.0445389018, 0.0133324956, 0.1284334294, 0.0122780156, -0.0023861828, -0.0032722984, -0.0060019839, 0.0086527895, -0.0111882022, -0.0349673412, 0.0133417022, -0.0887673908, -0.0275147364, -0.0146839115, -0.0024901228, 0.0041304654, 0.0018204541, -0.0022792563, -0.0189851402, -0.0039365573, 0.0036359306, -0.0121414575, 0.0749431348, -0.0044259752, 0.0033292430, 0.0084257633, -0.0010380224, 0.0100569830, -0.0001364005, 0.0464309935, 0.0040019716, 0.0194226880, 0.0189757404)
+
+			jWarp = 1:10
+			theta <- exp(p[1:3])
+
+			beta1 <- p[3 + 1:length(jWarp)]
+			beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
+			beta3 <- p[3 + 2 * length(jWarp) + 1:length(jWarp)]
+
+			parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta3, ncol=length(beta3), nrow=nrow(X), byrow=T)),
+				       rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+					rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+			PARAMETER_NONSTAT <- t(sigma) %*% parWarpsSum
+
+
+
+			cat('Computing covariances...', '\n')
+
+			if(!DISTRIBUTED){
+
+				cov1 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T)
+
+				cat('Generating realizations...', '\n')
+
+				set.seed(1)
+				r1 <- rmvn(10, rep(0, n * TT), cov1[["covariance"]], ncores = number_of_cores_to_use)
+
+				cat('Saving the values...', '\n')
+
+				write.table(cov1[["covariance"]][reference_locations, ], file = paste(root, "Data/nonstationary-taylor-hypothesis/cov-example-1-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+			}else{
+
+				cores=detectCores()
+
+				number_of_cores_to_use = cores[1]-1 # not to overload the computer
+				cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+
+				cl <- makeCluster(number_of_cores_to_use) 
+				registerDoParallel(cl)
+
+				clusterEvalQ(cl, source("./pkg-config.R"))
+				clusterExport(cl, c("PARAMETER_NONSTAT", "TT", "WIND_SIMULATED"), envir = environment())
+
+
+				cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
+
+				output <- foreach(i=1:nrow(WIND_SIMULATED), .combine='+', .packages = "Rcpp", .noexport = "SPATIALLY_VARYING_PARAMETERS_FOR_FITTING_PARALLEL") %dopar% {
+					
+					COVARIANCE <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, WIND_SIMULATED[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, FITTING = T, PARALLEL = T)
+
+					return(c(COVARIANCE))
+				}
+
+				stopCluster(cl)
+
+			}
+
+		}else if(MODEL == 2){
+
+			p <- c(0.067172812, -0.141482629, -0.123072246, -0.020615311, 0.026682032, -0.064454540, 0.006658298, -0.007649700, 0.047388007, -0.004046326, 0.035169697, -0.032544016, -0.009401134, 0.036043187, 0.004287410, -0.010179291, 0.016116570, 0.022926999, -0.105069368, 0.117549831, -0.017031510, 0.094188039, 0.057326933)
+
+			jWarp = 1:10
+			theta <- exp(p[1:3])
+
+			beta1 <- p[3 + 1:length(jWarp)]
+			beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
+
+			parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
+				       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
+
+			PARAMETER_DEFORMATION <- t(sigma) %*% parWarpsSum
+
+
+
+			cat('Computing covariances...', '\n')
+
+
+			if(!DISTRIBUTED){
+				cov2 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T)
+
+				cat('Generating realizations...', '\n')
+
+				set.seed(1)
+				r2 <- rmvn(10, rep(0, n * TT), cov2[["covariance"]], ncores = number_of_cores_to_use)
+
+				cat('Saving the values...', '\n')
+
+				write.table(cov2[["covariance"]][reference_locations, ], file = paste(root, "Data/nonstationary-taylor-hypothesis/cov-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
+
+			}else{
+
+				cores=detectCores()
+
+				number_of_cores_to_use = cores[1]-1 # not to overload the computer
+				cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+
+				cl <- makeCluster(number_of_cores_to_use) 
+				registerDoParallel(cl)
+
+				clusterEvalQ(cl, source("./pkg-config.R"))
+				clusterExport(cl, c("PARAMETER_DEFORMATION", "TT", "WIND_SIMULATED"), envir = environment())
+
+
+				cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
+
+				output <- foreach(i=1:nrow(WIND_SIMULATED), .combine='+', .packages = "Rcpp", .noexport = "DEFORMATION_FOR_FITTING_PARALLEL") %dopar% {
+					
+					COVARIANCE <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, WIND_SIMULATED[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T, PARALLEL = T)
+
+					return(c(COVARIANCE))
+				}
+
+				stopCluster(cl)
+
+
+			}
+
+
 		}
 
-		stopCluster(cl)
-
-
-
-		cov1 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
+		theocov <- matrix(output, n * TT, n * TT) / nrow(WIND_SIMULATED) 
 
 		cat('Generating realizations...', '\n')
-
-		set.seed(1)
-		r <- rmvn(1000, rep(0, n * TT), cov1, ncores = number_of_cores_to_use)
-
-
-
-
-	}
-
-}else if(MODEL == 2){
-
-	p <- c(0.067172812, -0.141482629, -0.123072246, -0.020615311, 0.026682032, -0.064454540, 0.006658298, -0.007649700, 0.047388007, -0.004046326, 0.035169697, -0.032544016, -0.009401134, 0.036043187, 0.004287410, -0.010179291, 0.016116570, 0.022926999, -0.105069368, 0.117549831, -0.017031510, 0.094188039, 0.057326933)
-
-	jWarp = 1:10
-	theta <- exp(p[1:3])
-
-	beta1 <- p[3 + 1:length(jWarp)]
-	beta2 <- p[3 + length(jWarp) + 1:length(jWarp)]
-
-	parWarpsSum <- cbind(rowSums( g[,3+jWarp] * matrix(beta2, ncol=length(beta2), nrow=nrow(X), byrow=T)),
-		       rowSums( g[,3+jWarp] * matrix(beta1, ncol=length(beta1), nrow=nrow(X), byrow=T)))
-
-	PARAMETER_DEFORMATION <- t(sigma) %*% parWarpsSum
-
-
-
-	cat('Computing covariances...', '\n')
-
-
-	if(!DISTRIBUTED){
-		cov2 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, WIND, 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T)
-
-		cat('Generating realizations...', '\n')
-
-		set.seed(1)
-		r2 <- rmvn(10, rep(0, n * TT), cov2[["covariance"]], ncores = number_of_cores_to_use)
-
-		cat('Saving the values...', '\n')
-
-		write.table(cov2[["covariance"]][reference_locations, ], file = paste(root, "Data/nonstationary-taylor-hypothesis/cov-example-2-velocity_mu_config_", velocity_mu_config, "_velocity_var_config_", velocity_var_config, sep = ""), sep = " ", row.names = FALSE, col.names = FALSE)
-
-	}else{
-
-		cores=detectCores()
-
-		number_of_cores_to_use = cores[1]-1 # not to overload the computer
-		cat('Registering', number_of_cores_to_use, 'cores...', '\n')
-
-		cl <- makeCluster(number_of_cores_to_use) 
-		registerDoParallel(cl)
-
-		clusterEvalQ(cl, source("./pkg-config.R"))
-		clusterExport(cl, c("PARAMETER_DEFORMATION", "TT"), envir = environment())
-
-		cat('Simulating wind values...', '\n')
 
 		set.seed(1234)
-		wind_vals <- mvrnorm(n_sim, WIND_MU, WIND_VAR)
+		r <- rmvn(1000, rep(0, n * TT), theocov, ncores = number_of_cores_to_use)
 
-		cat('Distributing computations over', number_of_cores_to_use, 'cores...', '\n')
 
-		output <- foreach(i=1:nrow(wind_vals), .combine='+', .packages = "Rcpp", .noexport = "DEFORMATION_FOR_FITTING_PARALLEL") %dopar% {
-			
-			COVARIANCE <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_vals[i, ], 0.001, 0, 0, 0.001), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, FITTING = T, PARALLEL = T)
+		empcov <- cov(r)
+	
 
-			return(c(COVARIANCE))
+		count <- 1
+		diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
+		for(l2 in locs_sub_index){
+			diff_cov_emp_temp <- diff_cov_theo_temp <- NULL
+			for(t2 in 1:(TT - 1)){
+				cov_purely_time_emp <- empcov[l2, l2 + n * t2]
+				cov_purely_time_theo <- theocov[l2, l2 + n * t2]
+				cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
+				for(k in 1:n_sim){
+					wind <- WIND_SIMULATED[k, ]
+					new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
+					find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
+
+					cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
+					cov_purely_space_theo_temp <- cov_purely_space_theo_temp + theocov[l2, find_new_loc_index]
+				}
+				cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
+				cov_purely_space_theo <- cov_purely_space_theo_temp / n_sim
+				diff_cov_emp_temp <- c(diff_cov_emp_temp, cov_purely_time_emp - cov_purely_space_emp)
+				diff_cov_theo_temp <- c(diff_cov_theo_temp, cov_purely_time_theo - cov_purely_space_theo)
+			}
+			diff_cov_emp[count, ] <- diff_cov_emp_temp
+			diff_cov_theo[count, ] <- diff_cov_theo_temp
+			count <- count + 1
 		}
 
-		stopCluster(cl)
-
-
-
-		cov2 <- matrix(output, n * TT, n * TT) / nrow(wind_vals) 
-
-		cat('Generating realizations...', '\n')
-
-		set.seed(1)
-		r <- rmvn(1000, rep(0, n * TT), cov2, ncores = number_of_cores_to_use)
-
-
+		DIFF_ARRAY_EMP[, , m, MODEL] <- diff_cov_emp
+		DIFF_ARRAY_THEO[, , m, MODEL] <- diff_cov_theo
 	}
-
-
 }
+
+DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
+
+
 
 if(TESTING_REFERENCE){
 
@@ -354,75 +391,7 @@ if(TESTING_REFERENCE){
 
 }
 
-if(PLOT_MANUSCRIPT){
-
-
-
-	set.seed(1234)
-	r1 <- mvrnorm(1000, rep(0, ncol(cov1)), cov1)
-
-	set.seed(1234)
-	r2 <- mvrnorm(1000, rep(0, ncol(cov2)), cov2)
-
-	EMPCOV <- THEOCOV <- array(, dim = c(dim(cov1), 2))
-
-	EMPCOV[, , 1] <- cov(r1)
-	EMPCOV[, , 2] <- cov(r2)
-
-	THEOCOV[, , 1] <- cov1
-	THEOCOV[, , 2] <- cov2
-
-	adj_mu <- c(0, 0, 0, 0)
-	adj_sig <- c(1, 10, 100, 1000)
-
-
-	locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
-	locs_sub_length <- length(locs_sub_index)
-
-	DIFF_ARRAY_EMP <- DIFF_ARRAY_THEO <- array(, dim = c(locs_sub_length, TT - 1, length(adj_mu), 2))
-
-	for(model in 1:2){
-
-		empcov <- EMPCOV[, , model]
-		theocov <- THEOCOV[, , model]
-
-		for(m in 1:length(adj_mu)){
-
-			set.seed(1234)
-			WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = WIND_MU + adj_mu[m], Sigma = matrix(WIND_VAR * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
-
-			count <- 1
-			diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
-			for(l2 in locs_sub_index){
-				diff_cov_emp_temp <- diff_cov_theo_temp <- NULL
-				for(t2 in 1:(TT - 1)){
-					cov_purely_time_emp <- empcov[l2, l2 + n * t2]
-					cov_purely_time_theo <- theocov[l2, l2 + n * t2]
-					cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
-					for(k in 1:n_sim){
-						wind <- WIND_SIMULATED[k, ]
-						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
-						find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
-
-						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
-						cov_purely_space_theo_temp <- cov_purely_space_theo_temp + theocov[l2, find_new_loc_index]
-					}
-					cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
-					cov_purely_space_theo <- cov_purely_space_theo_temp / n_sim
-					diff_cov_emp_temp <- c(diff_cov_emp_temp, cov_purely_time_emp - cov_purely_space_emp)
-					diff_cov_theo_temp <- c(diff_cov_theo_temp, cov_purely_time_theo - cov_purely_space_theo)
-				}
-				diff_cov_emp[count, ] <- diff_cov_emp_temp
-				diff_cov_theo[count, ] <- diff_cov_theo_temp
-				count <- count + 1
-			}
-
-			DIFF_ARRAY_EMP[, , m, model] <- diff_cov_emp
-			DIFF_ARRAY_THEO[, , m, model] <- diff_cov_theo
-		}
-	}
-
-	DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
+if(SIMULATION1){
 
 	pdf(file = paste(root, 'Figures/5-test-functions-simulation1.pdf', sep = ''), width = 25, height = 10)
 
@@ -439,7 +408,7 @@ if(PLOT_MANUSCRIPT){
 			screen((model - 1) * 4 + 2 + m)
 			par(mai=c(0.2,0.2,0.2,0.2))
 			
-			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.5, 0.5))
+			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.05, 0.5))
 			abline(h = 0, col = 3, lty = 2, lwd = 5)
 
 			if(m == 1){
@@ -460,6 +429,10 @@ if(PLOT_MANUSCRIPT){
 	close.screen( all=TRUE)
 
 	dev.off()
+
+}
+
+if(SIMULATION2){
 
 	adj_alpha <- c(0, 0.1, 0.5, 1)
 
@@ -523,13 +496,13 @@ if(PLOT_MANUSCRIPT){
 			screen((model - 1) * 4 + 2 + m)
 			par(mai=c(0.2,0.2,0.2,0.2))
 			
-			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.05, 0.05))
+			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.04, 0.04))
 			abline(h = 0, col = 3, lty = 2, lwd = 5)
 
 			if(m == 1){
 				mtext(expression(hat(f)), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
 				text(-0.275, 0, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
-				axis(2, cex.axis = 2)
+				axis(2, cex.axis = 1.5)
 			}
 
 			if(model == 1){
