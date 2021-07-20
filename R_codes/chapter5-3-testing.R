@@ -508,6 +508,44 @@ if(PLOT_MANUSCRIPT){
 
 	DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
 
+	pdf(file = paste(root, 'Figures/5-test-functions-simulation2.pdf', sep = ''), width = 25, height = 10)
+
+	split.screen( rbind(c(0.08,0.98,0.1,0.95), c(0.98,0.99,0.1,0.95)))
+	split.screen( figs = c( 2, 4 ), screen = 1 )
+
+	hr_label <- c('i', 'ii', 'iii', 'iv')
+	mod_label <- c('A', 'B')
+
+	for(model in 1:2){
+
+		for(m in 1:length(adj_mu)){
+		
+			screen((model - 1) * 4 + 2 + m)
+			par(mai=c(0.2,0.2,0.2,0.2))
+			
+			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.5, 0.5))
+			abline(h = 0, col = 3, lty = 2, lwd = 5)
+
+			if(m == 1){
+				mtext(expression(hat(f)), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
+				text(-0.275, 0, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
+				axis(2, cex.axis = 2)
+			}
+
+			if(model == 1){
+				mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+			}else{
+				mtext(expression(t^'*'), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
+				axis(1, at = seq(1, 4, by = 1), cex.axis = 2, mgp = c(1, 1.5, 0))
+			}
+		}
+	}				
+
+	close.screen( all=TRUE)
+
+	dev.off()
+
+
 }
 
 
