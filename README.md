@@ -56,15 +56,16 @@ pm2.5: https://disc.gsfc.nasa.gov/datasets/M2T1NXAER_5.12.4/summary
 <br> wind: https://disc.gsfc.nasa.gov/datasets/M2I1NXASM_5.12.4/summary
 <br> pm2.5 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NVAER_5.12.4/summary
 <br> wind 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NPASM_5.12.4/summary
-<br> reflexivity (Taylor’s Hypothesis for Non-Frozen Nonstationary Spatio-Temporal Random Fields): https://thredds.ucar.edu/thredds/ncss/grib/nexrad/composite/unidata/TP/dataset.html   [Link is dead] 
+<br> covariates: https://disc.gsfc.nasa.gov/datasets/M2I3NVASM_5.12.4/summary
 
 subregion for saudi land and ocean region
 
 Spatial subset: 26.719,5.625,85.078,42.188
 
-covariates: https://disc.gsfc.nasa.gov/datasets/M2I3NVASM_5.12.4/summary
 
 
 ## Note:
 
 Run the Rscript inside the folder R_codes
+
+
