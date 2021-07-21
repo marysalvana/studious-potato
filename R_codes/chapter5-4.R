@@ -21,7 +21,7 @@ label <- c('00:00', '00:05', '00:10', '00:15', '00:20', '00:25', '00:30', '00:35
 
 zlim_range1 <- range(DATA[[1]][hr_ind, ], na.rm = T)
 
-jpeg(file = paste(root, 'Figures/5-application.jpg', sep = ''), width = 1800, height = 1000)
+jpeg(file = paste(root, 'Figures/5-application.jpg', sep = ''), width = 1600, height = 800)
 
 split.screen( rbind(c(0.05,0.95,0.12,0.92), c(0.95,0.99,0.12,0.92)))
 split.screen( figs = c( 2, 5 ), screen = 1 )
@@ -35,7 +35,7 @@ for(hr in hr_ind){
 
 	par(pty = 's')
 	#par(pin=c(6, 1.5))
-	par(mai=c(0.5,0.5,0.5,0.6))
+	par(mai=c(0.3,0.3,0.3,0.6))
 	
 	if(hr_count %in% c(1, 6)){
 		quilt.plot(DATA[["locations"]][, 1], DATA[["locations"]][, 2], DATA[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
@@ -48,9 +48,10 @@ for(hr in hr_ind){
 	if(hr_count %in% c(1, 6)){
 		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
 		axis(2, cex.axis = 2)
-		#axis(2, at = seq(min(locs[, 2]), max(locs[, 2]), length.out = 5), cex.axis = 1)
 	}
-	mtext(label[hr], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+
+	mtext(paste(hr - 1, ":00", sep = ""), side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
+
 	if(hr > 5){
 		mtext('Longitude', side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
 		axis(1, cex.axis = 2)
@@ -61,7 +62,7 @@ screen(2)
 
 x1 <- c(0.025,0.1,0.1,0.025) + 0.1
 y1 <- c(0.3,0.3,0.7,0.7)
-legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(zlim_range1[1], zlim_range1[2], length.out = 3), 1), CEX = 2)
+legend.gradient2(cbind(x1,y1), title = "", limits = round(seq(-3, 3, length.out = 3), 1), CEX = 2)
 
 close.screen( all=TRUE)
 dev.off()
