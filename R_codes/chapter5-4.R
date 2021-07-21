@@ -21,8 +21,7 @@ label <- c('00:00', '00:05', '00:10', '00:15', '00:20', '00:25', '00:30', '00:35
 
 zlim_range1 <- range(DATA[[1]][hr_ind, ], na.rm = T)
 
-jpeg(file = paste(root, 'Figures/5-application.jpg', sep = ''), width = 1800, height = 500)
-#pdf(file = paste(root, 'Figures/4_application.pdf', sep = ''), width = 27, height = 7)
+jpeg(file = paste(root, 'Figures/5-application.jpg', sep = ''), width = 1800, height = 1000)
 
 split.screen( rbind(c(0.05,0.95,0.12,0.92), c(0.95,0.99,0.12,0.92)))
 split.screen( figs = c( 2, 5 ), screen = 1 )
@@ -34,15 +33,17 @@ for(hr in hr_ind){
 	
 	screen(2 + hr_count)
 
-	#par(pty = 's')
-	par(pin=c(6, 1.5))
+	par(pty = 's')
+	#par(pin=c(6, 1.5))
 	par(mai=c(0.5,0.5,0.5,0.6))
 	
-	quilt.plot(DATA[["locations"]][, 1], DATA[["locations"]][, 2], DATA[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, axes = F)
-	#quilt.plot(DATA[["locations"]][, 1], DATA[["locations"]][, 2], DATA[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+	if(hr_count %in% c(1, 6)){
+		quilt.plot(DATA[["locations"]][, 1], DATA[["locations"]][, 2], DATA[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n')
+	}else{
+		quilt.plot(DATA[["locations"]][, 1], DATA[["locations"]][, 2], DATA[["data_matrix"]][hr, ], zlim = zlim_range1, nx = 25, ny = 25, ylab = '', xlab = '', cex.lab = 4, add.legend = F, cex.axis = 2, xaxt = 'n', yaxt = 'n')
+	}
 
-	#mtext('Base Reflectivity (dBZ)', side = 2, line = 7, adj = 0.5, cex = 3, font = 2, col = 'blue')
-	map("state", xlim =  c(-120, -70), ylim = c(30, 50), lwd = 0.75, add = T)
+	map("worldHires", xlim = c(26.719, 85.078), ylim = c(5.625, 42.188), lwd = 0.75, add = T)
 	
 	if(hr_count %in% c(1, 6)){
 		mtext('Latitude', side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
