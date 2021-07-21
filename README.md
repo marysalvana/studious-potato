@@ -21,6 +21,11 @@ chapter2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 - chapter0-thesis-presentation-plots.R -- codes to plot figures for thesis defense presentation beamer
 - chapter0-thesis-presentation.R -- codes to produce covariance and realizations for thesis defense presentation
 <br> <br>
+- chapter2-3.R -- codes for thin plate splines figure
+- chapter2-4.R -- codes for simulation study
+- chapter2-5-plots.R -- codes to plot space-time images in manuscript
+- chapter2-5-estimation.R -- codes to fit models on real data 
+<br> <br>
 - chapter5-2.R -- codes for simulating theoretical and empirical Taylor's hypothesis test functions
 - chapter5-3.R -- codes for simulating Lagrangian nonstationary covariance (spatially varying and deformation models) and nonparametric estimation of the advection velocity parameters
 - chapter5-4.R -- codes for real data application
