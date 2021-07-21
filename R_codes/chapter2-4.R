@@ -1,15 +1,9 @@
 
-workstation = T
 
-if(workstation) directory <- '/home/salvanmo/Desktop/' 		else 		directory <- '/ibex/scratch/salvanmo/'
 
-root <- paste(directory, 'studious-potato/', sep = '')
+source("./pkg-config.R")
 
-source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
-source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
-source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
 
-sourceCpp(file = paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
 
 radian <- seq(-2 * pi, 2 * pi, length = 2000)
 radius <- 1

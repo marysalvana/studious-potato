@@ -27,7 +27,7 @@ chapter2 - Lagrangian Spatio-Temporal Nonstationary Covariance Function
 <br> <br>
 - chapter7-1-synthetic-data.R -- codes for plotting synthetic data for space-time ExaGeoStat
 - chapter7-2-extract-data-from-ncdf.R -- codes for extracting data from ncdf
-- chapter7-3-real-data.R -- codes for processing real data application results from Shaheen 
+- chapter7-3-real-data.R -- codes for plotting real data and processing results from Shaheen 
 <br> <br>
 - chapter8-1-synthetic-data.R -- codes for plotting synthetic data for ExaGeoStat Lagrangian
 
