@@ -23,10 +23,10 @@ if(area == 'US'){
 	NCDF_EXTENSION = ".nc4.nc4"
 }
 
-root <- paste(directory, 'studious-potato/', sep = '')
 
-source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
-source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
+
+source("./pkg-config.R")
+
 
 
 extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, region = NULL){
@@ -121,7 +121,7 @@ extract_data <- function(yr, variable_name, get_subset = F, subset = NULL, regio
 
 ## Indicate (1) the variable name and (2) the year to which you want to get the data.
 
-for(YEAR in 2016:2020){
+for(YEAR in 1980:2009){
 
 	data_matrix <- extract_data(yr = YEAR, variable_name = VARIABLE_NAME, get_subset = GET_SUBSET, subset = SUBSET, region = REGION)
 
