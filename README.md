@@ -51,6 +51,7 @@ pm2.5: https://disc.gsfc.nasa.gov/datasets/M2T1NXAER_5.12.4/summary
 <br> wind: https://disc.gsfc.nasa.gov/datasets/M2I1NXASM_5.12.4/summary
 <br> pm2.5 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NVAER_5.12.4/summary
 <br> wind 3D: https://disc.gsfc.nasa.gov/datasets/M2I3NPASM_5.12.4/summary
+<br> reflexivity (Taylor’s Hypothesis for Non-Frozen Nonstationary Spatio-Temporal Random Fields): https://thredds.ucar.edu/thredds/ncss/grib/nexrad/composite/unidata/TP/dataset.html   [Link is dead] 
 
 subregion for saudi land and ocean region
 

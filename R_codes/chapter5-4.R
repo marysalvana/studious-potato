@@ -1,10 +1,5 @@
 
-directory <- '/home/salvanmo/Desktop/'
-
-root <- paste(directory, 'studious-potato/', sep = '')
-
-source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
-source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
+source("./pkg-config.R")
 
 ncname <- paste("/home/salvanmo/Downloads/unidata_TP.nc4", sep='')   
 

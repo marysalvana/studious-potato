@@ -8,6 +8,7 @@ source("./pkg-config.R")
 DISTRIBUTED = T
 TESTING_REFERENCE = F
 PLOT = F
+PLOT_MANUSCRIPT = T
 SIMULATION1 = T
 SIMULATION2 = F
 
@@ -72,6 +73,7 @@ n_sim <- 500
 
 adj_mu <- c(0, 0, 0, 0)
 adj_sig <- c(1, 10, 100, 1000)
+adj_alpha <- c(0, 0.1, 0.5, 1)
 
 
 locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
@@ -86,8 +88,14 @@ for(MODEL in 1:2){
 		cat("MODEL: ", MODEL, ";  m: ", m, "\n")
 
 		cat('Simulating wind values...', '\n')
+
 		set.seed(1234)
-		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = WIND_MU + adj_mu[m], Sigma = matrix(WIND_VAR * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+
+		if(SIMULATION1){
+			WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = WIND_MU + adj_mu[m], Sigma = matrix(WIND_VAR * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+		}else if(SIMULATION2){
+			WIND_SIMULATED <- rmsn(n = n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0) + adj_alpha[m])
+		}
 
 
 
@@ -226,7 +234,71 @@ for(MODEL in 1:2){
 
 
 		empcov <- cov(r)
-	
+
+
+		############################################################################################
+
+		NEGLOGLIK_NONPARAMETRIC <- function(p){
+
+			wind_mu <- p[1:2]
+
+			wind_var_chol <- matrix(c(p[3], p[4], 0, p[5]), ncol = 2, byrow = T)
+			wind_var <- t(wind_var_chol) %*% wind_var_chol
+
+
+			set.seed(1234)
+			est_wind_vals <- matrix(mvrnorm(n_sim, mu = wind_mu, Sigma = wind_var), ncol = 2, byrow = T)
+
+
+			diff_cov_emp <- 0
+
+			for(l2 in locs_sub_index){
+				cov_purely_space_emp <- cov_purely_time_emp <- matrix(, TT, TT)
+				for(t1 in 1:TT){
+					for(t2 in t1:TT){
+						cov_purely_time_emp[t1, t2] <- empcov[l2 + n * (t1 - 1), l2 + n * (t2 - 1)]
+						cov_purely_space_emp_temp <- 0
+						for(k in 1:n_sim){
+							wind <- est_wind_vals[k, ]
+							new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * (t2 - 1), sim_grid_locations[l2, 2] - wind[2] * (t2 - 1)), ncol = 2)
+							find_new_loc_index <- which.min(distR_C(cbind(sim_grid_locations[, 1] - wind[1] * (t1 - 1), sim_grid_locations[, 2] - wind[2] * (t1 - 1)), new_loc))[1]
+
+							cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2 + n * (t1 - 1), find_new_loc_index + n * (t1 - 1)]
+						}
+						cov_purely_space_emp[t1, t2] <- cov_purely_space_emp_temp / n_sim
+						if(t2 != t1){
+							cov_purely_space_emp[t2, t1] <- cov_purely_space_emp[t1, t2]
+							cov_purely_time_emp[t2, t1] <- cov_purely_time_emp[t1, t2]
+						}
+					}
+				}
+
+				diff_cov_emp <- diff_cov_emp + sum((cov_purely_time_emp - cov_purely_space_emp)^2)
+
+
+			}
+
+
+			return(diff_cov_emp)
+		}
+
+
+		init <- c(0.2, 0.2, 0.1, 0, 0.1)
+
+		fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
+
+		p <- fit1$par
+		EST_WIND_MU <- p[1:2]
+
+		wind_var_chol <- matrix(c(p[3], p[4], 0, p[5]), ncol = 2, byrow = T)
+		EST_WIND_VAR <- t(wind_var_chol) %*% wind_var_chol
+
+
+		############################################################################################
+
+		set.seed(1234)
+		est_wind_vals <- mvrnorm(n_sim, EST_WIND_MU, EST_WIND_VAR)
+
 
 		count <- 1
 		diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
@@ -237,7 +309,7 @@ for(MODEL in 1:2){
 				cov_purely_time_theo <- theocov[l2, l2 + n * t2]
 				cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
 				for(k in 1:n_sim){
-					wind <- WIND_SIMULATED[k, ]
+					wind <- est_wind_vals[k, ]
 					new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
 					find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
 
@@ -258,8 +330,6 @@ for(MODEL in 1:2){
 		DIFF_ARRAY_THEO[, , m, MODEL] <- diff_cov_theo
 	}
 }
-
-DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
 
 
 
@@ -391,9 +461,13 @@ if(TESTING_REFERENCE){
 
 }
 
-if(SIMULATION1){
+if(PLOT_MANUSCRIPT){
 
-	pdf(file = paste(root, 'Figures/5-test-functions-simulation1.pdf', sep = ''), width = 25, height = 10)
+	if(SIMULATION1){
+		pdf(file = paste(root, 'Figures/5-test-functions-simulation1.pdf', sep = ''), width = 25, height = 10)
+	}else if(SIMULATION2){
+		pdf(file = paste(root, 'Figures/5-test-functions-simulation2.pdf', sep = ''), width = 25, height = 10)
+	}
 
 	split.screen( rbind(c(0.08,0.98,0.1,0.95), c(0.98,0.99,0.1,0.95)))
 	split.screen( figs = c( 2, 4 ), screen = 1 )
@@ -408,7 +482,7 @@ if(SIMULATION1){
 			screen((model - 1) * 4 + 2 + m)
 			par(mai=c(0.2,0.2,0.2,0.2))
 			
-			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.05, 0.5))
+			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = range(DIFF_ARRAY_EMP[, , , model]))
 			abline(h = 0, col = 3, lty = 2, lwd = 5)
 
 			if(m == 1){
@@ -429,95 +503,6 @@ if(SIMULATION1){
 	close.screen( all=TRUE)
 
 	dev.off()
-
-}
-
-if(SIMULATION2){
-
-	adj_alpha <- c(0, 0.1, 0.5, 1)
-
-	DIFF_ARRAY_EMP <- DIFF_ARRAY_THEO <- array(, dim = c(locs_sub_length, TT - 1, length(adj_mu), 2))
-
-	for(model in 1:2){
-
-		empcov <- EMPCOV[, , model]
-		theocov <- THEOCOV[, , model]
-
-		for(m in 1:length(adj_mu)){
-
-			set.seed(1234)
-			WIND_SIMULATED <- rmsn(n = n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0) + adj_alpha[m])
-
-			count <- 1
-			diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
-			for(l2 in locs_sub_index){
-				diff_cov_emp_temp <- diff_cov_theo_temp <- NULL
-				for(t2 in 1:(TT - 1)){
-					cov_purely_time_emp <- empcov[l2, l2 + n * t2]
-					cov_purely_time_theo <- theocov[l2, l2 + n * t2]
-					cov_purely_space_emp_temp <- cov_purely_space_theo_temp <- 0
-					for(k in 1:n_sim){
-						wind <- WIND_SIMULATED[k, ]
-						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * t2, sim_grid_locations[l2, 2] - wind[2] * t2), ncol = 2)
-						find_new_loc_index <- which.min(distR_C(sim_grid_locations, new_loc))[1]
-
-						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2, find_new_loc_index]
-						cov_purely_space_theo_temp <- cov_purely_space_theo_temp + theocov[l2, find_new_loc_index]
-					}
-					cov_purely_space_emp <- cov_purely_space_emp_temp / n_sim
-					cov_purely_space_theo <- cov_purely_space_theo_temp / n_sim
-					diff_cov_emp_temp <- c(diff_cov_emp_temp, cov_purely_time_emp - cov_purely_space_emp)
-					diff_cov_theo_temp <- c(diff_cov_theo_temp, cov_purely_time_theo - cov_purely_space_theo)
-				}
-				diff_cov_emp[count, ] <- diff_cov_emp_temp
-				diff_cov_theo[count, ] <- diff_cov_theo_temp
-				count <- count + 1
-			}
-
-			DIFF_ARRAY_EMP[, , m, model] <- diff_cov_emp
-			DIFF_ARRAY_THEO[, , m, model] <- diff_cov_theo
-		}
-	}
-
-	DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
-
-	pdf(file = paste(root, 'Figures/5-test-functions-simulation2.pdf', sep = ''), width = 25, height = 10)
-
-	split.screen( rbind(c(0.08,0.98,0.1,0.95), c(0.98,0.99,0.1,0.95)))
-	split.screen( figs = c( 2, 4 ), screen = 1 )
-
-	hr_label <- c('i', 'ii', 'iii', 'iv')
-	mod_label <- c('A', 'B')
-
-	for(model in 1:2){
-
-		for(m in 1:length(adj_mu)){
-		
-			screen((model - 1) * 4 + 2 + m)
-			par(mai=c(0.2,0.2,0.2,0.2))
-			
-			fbplot(t(DIFF_ARRAY_EMP[, , m, model]), method='MBD', ylab = '', xlab = '', xaxt = 'n', yaxt = 'n', ylim = c(-0.04, 0.04))
-			abline(h = 0, col = 3, lty = 2, lwd = 5)
-
-			if(m == 1){
-				mtext(expression(hat(f)), side = 2, line = 4, adj = 0.5, cex = 2.5, font = 2)
-				text(-0.275, 0, mod_label[model], col = 'blue', xpd = NA, cex = 4, font = 2)
-				axis(2, cex.axis = 1.5)
-			}
-
-			if(model == 1){
-				mtext(hr_label[m], side = 3, line = 1, adj = 0.5, cex = 3, font = 2)
-			}else{
-				mtext(expression(t^'*'), side = 1, line = 4, adj = 0.5,  cex = 2.5, font = 2)
-				axis(1, at = seq(1, 4, by = 1), cex.axis = 2, mgp = c(1, 1.5, 0))
-			}
-		}
-	}				
-
-	close.screen( all=TRUE)
-
-	dev.off()
-
 
 }
 
@@ -542,11 +527,6 @@ if(PLOT){
 	fbplot(f_theo, method='MBD', ylab = '', xlab = '')
 		
 	dev.off()
-
-
-
-
-
 
 
 }
