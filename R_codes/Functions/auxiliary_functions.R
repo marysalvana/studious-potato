@@ -117,13 +117,13 @@ mahalanobis_dist <- function(x, SIGS) {
 }
 
 
-data_format <- function(aggregate = 1, area){
+data_format <- function(aggregate = 1, area, start_yr = 2016, end_yr = 2019){
 
 	## LOAD HOURLY DATA FROM 2016 TO 2019
 
 	DAT <- NULL
 
-	for(YEAR in 2016:2019){
+	for(YEAR in start_yr:end_yr){
 
 		cat("LOADING MEASUREMENTS FROM ", YEAR, ". . .", '\n')
 		if(area == 'US'){
@@ -198,13 +198,13 @@ data_format <- function(aggregate = 1, area){
 
 # For saudi dataset only
 
-data_format_saudi_testing_only <- function(aggregate = 48, forward_time_predict = 1){
+data_format_saudi_testing_only <- function(aggregate = 48, forward_time_predict = 1, start_yr = 2020, end_yr = 2020){
 
 	## LOAD HOURLY DATA FROM 2016 TO 2019
 
 	DAT <- NULL
 
-	for(YEAR in 2020:2020){
+	for(YEAR in start_yr:end_yr){
 
 		cat("LOADING MEASUREMENTS FROM ", YEAR, ". . .", '\n')
 		DAT_temp <- read.table(paste(root, "Data/sc21/pm_", YEAR, sep = ""), header = FALSE, sep = ",") %>% as.matrix()
