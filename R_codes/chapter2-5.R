@@ -1,9 +1,9 @@
-directory <- '/home/salvanmo/Desktop/'
 
-root <- paste(directory, 'studious-potato/', sep = '')
 
-source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
-source(file = paste(root, "R_codes/Functions/load_packages.R",sep=''))
+
+source("./pkg-config.R")
+
+
 
 yr <- 2017
 DAT <- DAT_temp <- read.table(paste('/home/salvanmo/Desktop/ipdps/Data/pm_', yr, sep = ''), header = FALSE, sep = " ")
