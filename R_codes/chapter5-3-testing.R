@@ -331,8 +331,8 @@ for(MODEL in 1:2){
 	}
 }
 
-save(DIFF_ARRAY_EMP, DIFF_ARRAY_THEO, file = paste(root, 'Results/5-4-test-functions.RData', sep = ''))
-load(file = paste(root, 'Results/5-4-test-functions.RData', sep = ''))
+save(DIFF_ARRAY_EMP, DIFF_ARRAY_THEO, file = paste(root, 'Results/5-4-test-functions-simulation2.RData', sep = ''))
+load(file = paste(root, 'Results/5-4-test-functions-simulation2.RData', sep = ''))
 
 if(TESTING_REFERENCE){
 
