@@ -9,8 +9,8 @@ DISTRIBUTED = T
 TESTING_REFERENCE = F
 PLOT = F
 PLOT_MANUSCRIPT = T
-SIMULATION1 = T
-SIMULATION2 = F
+SIMULATION1 = F
+SIMULATION2 = T
 
 
 
@@ -68,8 +68,18 @@ htarg <- htarg[1:nn, (nn + 1):(nn + nrow(Xtarg))]
 sigma <- htarg^2 * log(htarg)
 sigma[htarg == 0] <- 0
 
+cores=detectCores()
 
-n_sim <- 500
+number_of_cores_to_use = cores[1]-1 # not to overload the computer
+cat('Registering', number_of_cores_to_use, 'cores...', '\n')
+
+cl <- makeCluster(number_of_cores_to_use) 
+registerDoParallel(cl)
+
+clusterEvalQ(cl, source("./pkg-config.R"))
+
+
+n_sim <- 100
 
 adj_mu <- c(0, 0, 0, 0)
 adj_sig <- c(1, 10, 100, 1000)
@@ -97,11 +107,7 @@ for(MODEL in 1:2){
 			WIND_SIMULATED <- rmsn(n = n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0) + adj_alpha[m])
 		}
 
-
-
 		if(MODEL == 1){
-
-
 
 			p <- c(-0.0445389018, 0.0133324956, 0.1284334294, 0.0122780156, -0.0023861828, -0.0032722984, -0.0060019839, 0.0086527895, -0.0111882022, -0.0349673412, 0.0133417022, -0.0887673908, -0.0275147364, -0.0146839115, -0.0024901228, 0.0041304654, 0.0018204541, -0.0022792563, -0.0189851402, -0.0039365573, 0.0036359306, -0.0121414575, 0.0749431348, -0.0044259752, 0.0033292430, 0.0084257633, -0.0010380224, 0.0100569830, -0.0001364005, 0.0464309935, 0.0040019716, 0.0194226880, 0.0189757404)
 
@@ -137,15 +143,6 @@ for(MODEL in 1:2){
 
 			}else{
 
-				cores=detectCores()
-
-				number_of_cores_to_use = cores[1]-1 # not to overload the computer
-				cat('Registering', number_of_cores_to_use, 'cores...', '\n')
-
-				cl <- makeCluster(number_of_cores_to_use) 
-				registerDoParallel(cl)
-
-				clusterEvalQ(cl, source("./pkg-config.R"))
 				clusterExport(cl, c("PARAMETER_NONSTAT", "TT", "WIND_SIMULATED"), envir = environment())
 
 
@@ -157,8 +154,6 @@ for(MODEL in 1:2){
 
 					return(c(COVARIANCE))
 				}
-
-				stopCluster(cl)
 
 			}
 
@@ -196,15 +191,6 @@ for(MODEL in 1:2){
 
 			}else{
 
-				cores=detectCores()
-
-				number_of_cores_to_use = cores[1]-1 # not to overload the computer
-				cat('Registering', number_of_cores_to_use, 'cores...', '\n')
-
-				cl <- makeCluster(number_of_cores_to_use) 
-				registerDoParallel(cl)
-
-				clusterEvalQ(cl, source("./pkg-config.R"))
 				clusterExport(cl, c("PARAMETER_DEFORMATION", "TT", "WIND_SIMULATED"), envir = environment())
 
 
@@ -217,7 +203,6 @@ for(MODEL in 1:2){
 					return(c(COVARIANCE))
 				}
 
-				stopCluster(cl)
 
 
 			}
@@ -275,15 +260,14 @@ for(MODEL in 1:2){
 
 				diff_cov_emp <- diff_cov_emp + sum((cov_purely_time_emp - cov_purely_space_emp)^2)
 
-
 			}
-
 
 			return(diff_cov_emp)
 		}
 
 
-		init <- c(0.2, 0.2, 0.1, 0, 0.1)
+		#init <- c(0.2, 0.2, 0.1, 0, 0.1)
+		init <- c(0.0501, 0.0501, 0.0001, 0, 0.0001)
 
 		fit1 <- optim(par = init, fn = NEGLOGLIK_NONPARAMETRIC, control = list(trace = 5, maxit = 3000)) #
 
@@ -520,6 +504,17 @@ if(PLOT){
 	plot(WIND_SIMULATED)
 	dev.off()
 
+	pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-heatmap-cov2.pdf', width = 25, height = 15)
+	par(mfrow = c(2, 3))
+	image.plot(matrix(theocov[65, 1:n], N, N))
+	image.plot(matrix(theocov[65, n + 1:n], N, N))
+	image.plot(matrix(theocov[65, 2 * n + 1:n], N, N))
+
+	image.plot(matrix(empcov[65, 1:n], N, N))
+	image.plot(matrix(empcov[65, n + 1:n], N, N))
+	image.plot(matrix(empcov[65, 2 * n + 1:n], N, N))
+	dev.off()
+
 	pdf(file = '/home/salvanmo/Desktop/studious-potato/Figures/5-3-test-functions.pdf', width = 20, height = 15)
 
 	par(mfrow = c(3, 1))
@@ -531,3 +526,5 @@ if(PLOT){
 
 
 }
+
+	stopCluster(cl)
