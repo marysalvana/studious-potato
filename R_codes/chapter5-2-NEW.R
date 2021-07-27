@@ -22,7 +22,9 @@ cat('Computing covariances...', '\n')
 
 wind_mu <- c(0.05, 0.05)
 wind_sigma <- c(0.01, 0, 0, 0.01)
-n_sim = 500
+WIND <- WIND_MU <- rep(0.05, 2)
+WIND_VAR <- matrix(0.01 * diag(2), 2, 2)
+n_sim = 1000
 
 cov1 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, N_SIM = n_sim, DIST = "NORMAL")
 
@@ -42,11 +44,12 @@ EMPCOV[, , 2] <- cov(r2)
 THEOCOV[, , 1] <- cov1[["covariance"]]
 THEOCOV[, , 2] <- cov2[["covariance"]]
 
-#adj_mu <- c(0, 0, 0, 0.05)
-#adj_sig <- c(1, 0.1, 5, 1)
+adj_mu <- c(0, 0, 0, 0.05)
+adj_sig <- c(1, 0.1, 5, 1)
 
-adj_mu <- c(0, 0, 0, 0)
-adj_sig <- c(1, 1, 1, 1)
+#adj_mu <- c(0, 0, 0, 0)
+#adj_sig <- c(1, 1, 1, 1)
+adj_alpha <- c(0, 0.3, 1, -5)
 
 locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
 locs_sub_length <- length(locs_sub_index)
@@ -61,7 +64,9 @@ for(model in 1:2){
 	for(m in 1:length(adj_mu)){
 
 		set.seed(1234)
-		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = wind_mu + adj_mu[m], Sigma = matrix(wind_sigma * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+		WIND_SIMULATED <- rmsn(n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0) + adj_alpha[m])
+		#WIND_SIMULATED <- rmsn(n_sim, xi = WIND_MU, WIND_VAR, alpha = c(0, 0) + c(adj_alpha[m], 0))
+		#WIND_SIMULATED <- mvrnorm(n_sim, mu = wind_mu + adj_mu[m], Sigma = matrix(wind_sigma * adj_sig[m], ncol = 2, nrow = 2))
 
 		count <- 1
 		diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
@@ -95,42 +100,6 @@ for(model in 1:2){
 }
 
 DIFF_ARRAY_THEO[, , 1, 1] <- DIFF_ARRAY_THEO[, , 1, 2] <- 0
-
-#############################################################################################
-
-		empcov <- EMPCOV[, , 1]
-
-
-		est_wind_vals <- WIND_SIMULATED
-
-		lag_max <- TT - 1
-		f_theo <- f_ref <- f_emp <- matrix(, ncol = length(locs_sub_index), nrow = lag_max)
-
-
-		ct <- 0
-		for(l2 in locs_sub_index){
-			cov_purely_space_emp <- cov_purely_time_emp <- matrix(, TT, TT)
-			for(t1 in 1:TT){
-				for(t2 in t1:TT){
-					cov_purely_time_emp[t1, t2] <- empcov[l2 + n * (t1 - 1), l2 + n * (t2 - 1)]
-					cov_purely_space_emp_temp <- 0
-					for(k in 1:n_sim){
-						wind <- est_wind_vals[k, ]
-						new_loc <- matrix(c(sim_grid_locations[l2, 1] - wind[1] * (t2 - 1), sim_grid_locations[l2, 2] - wind[2] * (t2 - 1)), ncol = 2)
-						find_new_loc_index <- which.min(distR_C(cbind(sim_grid_locations[, 1] - wind[1] * (t1 - 1), sim_grid_locations[, 2] - wind[2] * (t1 - 1)), new_loc))[1]
-
-						cov_purely_space_emp_temp <- cov_purely_space_emp_temp + empcov[l2 + n * (t1 - 1), find_new_loc_index + n * (t1 - 1)]
-					}
-					cov_purely_space_emp[t1, t2] <- cov_purely_space_emp_temp / n_sim
-					if(t2 != t1){
-						cov_purely_space_emp[t2, t1] <- cov_purely_space_emp[t1, t2]
-						cov_purely_time_emp[t2, t1] <- cov_purely_time_emp[t1, t2]
-					}
-				}
-			}
-
-			diff_cov_emp <- cov_purely_time_emp - cov_purely_space_emp
-		}
 
 
 
