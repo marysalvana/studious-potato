@@ -1,18 +1,11 @@
 
-workstation = T
 
-if(workstation) directory <- '/home/salvanmo/Desktop/'          else            directory <- '/ibex/scratch/salvanmo/'
 
-root <- paste(directory, 'studious-potato/', sep = '')
+source("./pkg-config.R")
 
-source(file = paste(root, "R_codes/Functions/load_packages.R", sep = ''))
-source(file = paste(root, "R_codes/Functions/auxiliary_functions.R", sep = ''))
-source(file = paste(root, "R_codes/Functions/cov_func.R", sep = ''))
 
-sourceCpp(file=paste(root, "R_codes/Functions/spatially_varying_parameters2.cpp",sep=''))
-sourceCpp(file=paste(root, "R_codes/Functions/distR.cpp",sep=''))
 
-N <- 30 #20
+N <- 20
 n <- N^2
 TT <- 5
 grid_x <- seq(from = 0, to = 1, length.out = N)
@@ -27,13 +20,13 @@ PARAMETER_DEFORMATION <- c(runif(2, -8, 8), runif(1, 0, 8), runif(2, -1, 1))
 
 cat('Computing covariances...', '\n')
 
-wind_mu <- c(0.05263158, 0.05263158)
+wind_mu <- c(0.05, 0.05)
 wind_sigma <- c(0.01, 0, 0, 0.01)
 n_sim = 500
 
-cov1 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, N_SIM = n_sim)
+cov1 <- MATERN_UNI_DEFORMATION(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_DEFORMATION = PARAMETER_DEFORMATION, N_SIM = n_sim, DIST = "NORMAL")
 
-cov2 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, N_SIM = n_sim)
+cov2 <- MATERN_UNI_SPATIALLY_VARYING_PARAMETERS(PARAMETER = c(1, 0.23, 1, wind_mu, wind_sigma), LOCATION = sim_grid_locations, TIME = TT, PARAMETER_NONSTAT = PARAMETER_NONSTAT, N_SIM = n_sim, DIST = "NORMAL")
 
 set.seed(1234)
 r1 <- mvrnorm(1000, rep(0, ncol(cov1[["covariance"]])), cov1[["covariance"]])
@@ -49,9 +42,11 @@ EMPCOV[, , 2] <- cov(r2)
 THEOCOV[, , 1] <- cov1[["covariance"]]
 THEOCOV[, , 2] <- cov2[["covariance"]]
 
-adj_mu <- c(0, 0, 0, 0.05)
-adj_sig <- c(1, 0.1, 5, 1)
+#adj_mu <- c(0, 0, 0, 0.05)
+#adj_sig <- c(1, 0.1, 5, 1)
 
+adj_mu <- c(0, 0, 0, 0)
+adj_sig <- c(1, 1, 1, 1)
 
 locs_sub_index <- which(sim_grid_locations[, 1] >= 0.25 & sim_grid_locations[, 1] <= 0.75 & sim_grid_locations[, 2] >= 0.25 & sim_grid_locations[, 2] <= 0.75)
 locs_sub_length <- length(locs_sub_index)
@@ -66,7 +61,7 @@ for(model in 1:2){
 	for(m in 1:length(adj_mu)){
 
 		set.seed(1234)
-		WIND_SIMULATED <- matrix(mvrnorm(n_sim, mu = wind_mu + adj_mu[m], Sigma = matrix(wind_sigma * adj_sig[m], ncol = 2, nrow = 2)), ncol = 2, byrow = T)
+		WIND_SIMULATED <- mvrnorm(n_sim, mu = wind_mu + adj_mu[m], Sigma = matrix(wind_sigma * adj_sig[m], ncol = 2, nrow = 2))
 
 		count <- 1
 		diff_cov_emp <- diff_cov_theo <- matrix(, ncol = 4, nrow = locs_sub_length)
