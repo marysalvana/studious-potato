@@ -203,22 +203,22 @@ for(dd in 1:9){
 	par(mai = c(0.1, 0.1, 0.1, 0.1))
   
   	if(mod(dd, 3) == 1){
-    		boxplot(DAT[(dd - 1) * 20 + 1:20, 1:6], ylim = c(0, 1.5), xaxt = 'n')
-    		mtext(ER_lables[bb], side = 2, line = 2.5, cex = 0.8, col = '#0993f3', font = 2)
+    		boxplot(DAT[(dd - 1) * 20 + 1:20, 1:6], ylim = c(0, 1.5), xaxt = 'n', col = 'white')
+    		mtext(ER_lables[bb], side = 2, line = 2.2, cex = 1.2, col = '#0993f3', font = 2)
     		if(bb == 2){
       			mtext('T    I    M    E', side = 2, line = 3.5, cex = 1.5, col = 'blue', font = 2)
     		}
     		bb <- bb + 1
   	}else{
-    		boxplot(DAT[(dd - 1) * 20 + 1:20, 1:6], ylim = c(0, 1.5), xaxt = 'n', yaxt = 'n')
+    		boxplot(DAT[(dd - 1) * 20 + 1:20, 1:6], ylim = c(0, 1.5), xaxt = 'n', yaxt = 'n', col = 'white')
   	}
   	segments(x0 = x0s, x1 = x1s, y0 = y0s[dd, ], col = "red", lwd = 2)
   
   	if(dd > 6){
-    		axis(1, at = 1:6, labels = c(expression(sigma^2), expression(a[s]), expression(nu), expression(a[t]), expression(alpha), expression(beta)))
+    		axis(1, at = 1:6, labels = c(expression(sigma^2), expression(a[s]), expression(nu), expression(a[t]), expression(alpha), expression(beta)), cex.axis = 1.2)
   	}
   	if(dd < 4){
-    		mtext(ER_lables[ff], side = 3, line = 0.5, cex = 0.8, col = '#0993f3', font = 2)
+    		mtext(ER_lables[ff], side = 3, line = 0.2, cex = 1.2, col = '#0993f3', font = 2)
     		if(ff == 2){
       			mtext('S    P    A    C    E', side = 3, line = 1.5, cex = 1.5, col = 'blue', font = 2)
     		}
