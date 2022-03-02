@@ -72,7 +72,7 @@ nonsep_pred <- read.table(paste(root, "Data/sc21/predicted_values_May_29_2021_04
 nonsep_crippled_pred <- read.table(paste(root, "Data/sc21/predicted_values_May_29_2021_04:13:33", sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 obs_test <- read.table(paste(root, "Data/sc21/data_st_testing_NEW_US", sep = ''), header = FALSE, sep = " ") %>% as.matrix()
 
-results_list[[4]] <- cbind(obs_test, sep_pred, nonsep_pred, nonsep_crippled_pred)
+results_list[[4]] <- cbind(obs_test[1:1890, ], sep_pred, nonsep_pred, nonsep_crippled_pred)
 
 
 MSPE_BOXPLOTS <- list()
@@ -94,24 +94,25 @@ label_adj <- c(2.5, 2.5, 1.25, 1.25)
 
 pdf(file = paste(root, 'Figures/6-MSPE-real-data.pdf', sep = ''), width = 20, height = 8)
 
-split.screen( rbind(c(0.04,0.99,0.06,0.85), c(0.99,0.99,0.1,0.95)))
-split.screen( figs = c( 1, 4 ), screen = 1 )
+split.screen( rbind(c(0.04,0.48,0.06,0.85), c(0.55,0.99,0.06,0.85), c(0.99,0.99,0.1,0.95)))
+split.screen( figs = c( 1, 2 ), screen = 1 )
+split.screen( figs = c( 1, 2 ), screen = 2 )
 
 for(jj in 1:length(MSPE_BOXPLOTS)){
-	screen(jj + 2)
+	screen(jj + 3)
 	par(mai=c(0.5, 0.5, 0.5, 0.5))
 
 	boxplot(MSPE_BOXPLOTS[[jj]], xlab = "", ylab = "", xaxt = 'n', col = rep(c("#28908C", "#F28F20"), 3), yaxt = 'n')
 	axis(2, cex.axis = 2)
 	mtext(dataset_label[jj], side = 3, line = 1, adj = 0.5, cex = 2)
 	if(jj %in% c(1, 3)){
-		mtext(country_label[jj], side = 3, line = 4, adj = label_adj[jj], cex = 2.5, col = 4, font = 2)
+		mtext(country_label[jj], side = 3, line = 4, adj = label_adj[jj], cex = 2.5, col = 'blue', font = 2)
 	}
 	if(jj == 1){
-		mtext('MSPE', side = 2, line = 3.5, adj = 0.5, cex = 2.5, col = 4, font = 2)
+		mtext('MSPE', side = 2, line = 3.5, adj = 0.5, cex = 2.5, col = 'blue', font = 2)
 	}
 
-	axis(1, at = 1:2, labels = c("Separable", "Nonseparable"), cex.axis = 1.5, tick = F)
+	axis(1, at = 1:2, labels = c("S", "NS"), cex.axis = 2, tick = F)
 }
 
 close.screen( all=TRUE)
