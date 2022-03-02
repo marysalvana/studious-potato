@@ -189,9 +189,9 @@ y0s <- matrix(c(1, 0.03, 1, 1, 0.5, 0.5,
 
 ER_lables <- c('Weak', 'Moderate', 'Strong')
 
-pdf(file = paste(root, 'Figures/6-parameter-estimates-pswarm.pdf', sep = ''), width = 8, height = 9)
+pdf(file = paste(root, 'Figures/6-parameter-estimates-pswarm.pdf', sep = ''), width = 8, height = 8)
 
-split.screen( rbind(c(0.12,0.98,0.1,0.95), c(0.93,0.99,0.1,0.95)))
+split.screen( rbind(c(0.12,0.97,0.05,0.95), c(0.93,0.99,0.08,0.95)))
 split.screen( figs = c( 3, 3 ), screen = 1 )
 
 bb <- 1
