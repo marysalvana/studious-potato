@@ -191,6 +191,8 @@ ER_lables <- c('Weak', 'Moderate', 'Strong')
 
 pdf(file = paste(root, 'Figures/6-parameter-estimates-pswarm.pdf', sep = ''), width = 8, height = 8)
 
+pdf(file = paste('../Figures/6-parameter-estimates-pswarm.pdf', sep = ''), width = 8, height = 8)
+
 split.screen( rbind(c(0.12,0.97,0.05,0.95), c(0.93,0.99,0.08,0.95)))
 split.screen( figs = c( 3, 3 ), screen = 1 )
 
@@ -215,7 +217,7 @@ for(dd in 1:9){
   	segments(x0 = x0s, x1 = x1s, y0 = y0s[dd, ], col = "red", lwd = 2)
   
   	if(dd > 6){
-    		axis(1, at = 1:6, labels = c(expression(sigma^2), expression(a[s]), expression(nu), expression(a[t]), expression(alpha), expression(beta)), cex.axis = 1.2)
+    		axis(1, at = 1:6, labels = c(expression(sigma^2), expression(a[s]), expression(nu), expression(1/a[t]), expression(alpha), expression(beta)), cex.axis = 1)
   	}
   	if(dd < 4){
     		mtext(ER_lables[ff], side = 3, line = 0.2, cex = 1.2, col = '#0993f3', font = 2)
